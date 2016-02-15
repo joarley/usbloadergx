@@ -32,8 +32,21 @@ extern "C"
 	void __exception_setreload(int t);
 }
 
+void WiimotePowerPressed(s32 chan)
+{
+	exit(0);
+}
+
+void WiiPowerPressed()
+{
+	exit(0);
+}
+
 int main(int argc, char *argv[])
 {
+	SYS_SetPowerCallback(WiiPowerPressed);
+	WPAD_SetPowerButtonCallback(WiimotePowerPressed);
+
 	__exception_setreload(20);
 	// activate magic access rights
 	MagicPatches(1);

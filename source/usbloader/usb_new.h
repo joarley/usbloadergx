@@ -3,7 +3,7 @@
 
 #include "ogc/disc_io.h"
 #include <fat.h>
-#include <ogc\usb.h>
+#include <ogc/usb.h>
 
 #ifdef __cplusplus
 extern "C"
