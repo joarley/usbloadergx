@@ -218,16 +218,10 @@ static inline bool USBSpinUp()
 		if(handle7)
 			started7 = (handle7->startup() && handle7->isInserted());
 
-		if(   (!handle0 || started0)
-		   && (!handle1 || started1)
-		 	 && (!handle2 || started2)
-		 	 && (!handle3 || started3)
-		 	 && (!handle4 || started4)
-		 	 && (!handle5 || started5)
-		 	 && (!handle6 || started6)
-		 	 && (!handle7 || started7)) {
+		if(started0 || started1|| started2 || started3
+			|| started4 || started5 || started6 || started7)
 			break;
-		}
+			
 		usleep(50000);
 	}
 	while(--retries > 0);
