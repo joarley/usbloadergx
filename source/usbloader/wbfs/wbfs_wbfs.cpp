@@ -9,17 +9,15 @@
 
 #define MAX_WBFS_SECTORSIZE	 4096
 
-extern u32 hdd_sector_size[8];
-
 s32 Wbfs_Wbfs::Open()
 {
 	wbfs_t *part = NULL;
 
 	PartInfo.wbfs_sector_size = MAX_WBFS_SECTORSIZE;
-	PartInfo.hdd_sector_size = hdd_sector_size[usbport];
+	PartInfo.hdd_sector_size = usbstorage_get_sector_size(usbport);
 	PartInfo.partition_lba = lba;
 	PartInfo.partition_num_sec = size;
-	PartInfo.handle = (usbport == 0) ? DeviceHandler::GetUSB0Interface() : DeviceHandler::GetUSB1Interface();
+	PartInfo.handle = DeviceHandler::Instance()->GetInterfaceUSB(usbport);
 
 	u8 * buffer = (u8 *) malloc(MAX_WBFS_SECTORSIZE);
 	memset(buffer, 0, MAX_WBFS_SECTORSIZE);
@@ -84,18 +82,18 @@ void Wbfs_Wbfs::CloseDisc(wbfs_disc_t *disc)
 s32 Wbfs_Wbfs::Format()
 {
 	WBFS_PartInfo HDD_Inf;
-	HDD_Inf.wbfs_sector_size = hdd_sector_size[usbport];
-	HDD_Inf.hdd_sector_size = hdd_sector_size[usbport];
+	HDD_Inf.wbfs_sector_size = usbstorage_get_sector_size(usbport);
+	HDD_Inf.hdd_sector_size = usbstorage_get_sector_size(usbport);
 	HDD_Inf.partition_lba = lba;
 	HDD_Inf.partition_num_sec = size;
-	HDD_Inf.handle = (usbport == 0) ? DeviceHandler::GetUSB0Interface() : DeviceHandler::GetUSB1Interface();
+	HDD_Inf.handle = DeviceHandler::Instance()->GetInterfaceUSB(usbport);
 
 	//! If size is over 500GB in sectors and sector size is 512
 	//! set 2048 as hdd sector size
-	if(size > 1048576000 && hdd_sector_size[usbport] == 512)
+	if(size > 1048576000 && usbstorage_get_sector_size(usbport) == 512)
 	{
 		HDD_Inf.wbfs_sector_size = 2048;
-		HDD_Inf.partition_num_sec = size/(2048/hdd_sector_size[usbport]);
+		HDD_Inf.partition_num_sec = size/(2048/usbstorage_get_sector_size(usbport));
 	}
 
 	wbfs_t *partition = NULL;
@@ -226,5 +224,5 @@ s32 Wbfs_Wbfs::GetFragList(u8 *id)
 {
 	//! Doesn't have to be called ".iso" just something different than .wbfs but with a dot.
 	//! So that the code doesn't fail.
-	return get_frag_list_for_file((char *) ".iso", id, GetFSType(), lba, hdd_sector_size[usbport]);
+	return get_frag_list_for_file((char *) ".iso", id, GetFSType(), lba, usbstorage_get_sector_size(usbport));
 }

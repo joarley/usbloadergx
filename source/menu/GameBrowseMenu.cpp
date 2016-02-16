@@ -996,7 +996,7 @@ int GameBrowseMenu::MainLoop()
 			BannerAsync::HaltThread();
 			bgMusic->Pause();
 			Settings.Save();
-			DeviceHandler::Instance()->UnMountSD();
+			DeviceHandler::Instance()->UnmountSD();
 			DeviceHandler::Instance()->MountSD();
 			gprintf("\tLoading config...%s\n", Settings.Load() ? "done" : "failed");
 			gprintf("\tLoading language...%s\n", Settings.LoadLanguage(Settings.language_path, CONSOLE_DEFAULT) ? "done" : "failed");

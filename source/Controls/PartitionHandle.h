@@ -160,6 +160,7 @@ class PartitionHandle
 		PartitionFS * GetPartitionRecord(int pos) { if(valid(pos)) return &PartitionList[pos]; else return NULL; };
 		//! Get the disc interface of this handle
 		const DISC_INTERFACE * GetDiscInterface() { return interface; };
+		int GetPartitionPos(const char* name);
 	protected:
 		bool valid(int pos) { return (pos >= 0 && pos < (int) PartitionList.size()); }
 		void AddPartition(const char * name, u64 lba_start, u64 sec_count, bool bootable, u8 part_type, u8 part_num, u8 part_TableType);

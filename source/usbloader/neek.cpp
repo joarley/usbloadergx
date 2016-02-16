@@ -50,9 +50,9 @@ bool neekLoadKernel (const char* nandpath)
 	gprintf( "NEEK: Loading Kernel.bin... ");
 	char kernelPath[30];
 	if(isWiiU())
-		snprintf(kernelPath, sizeof(kernelPath), "%s:/sneek/vwiikernel.bin", DeviceHandler::GetDevicePrefix(nandpath));
+		snprintf(kernelPath, sizeof(kernelPath), "%s:/sneek/vwiikernel.bin", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
 	if(!isWiiU() || !CheckFile(kernelPath))
-		snprintf(kernelPath, sizeof(kernelPath), "%s:/sneek/kernel.bin", DeviceHandler::GetDevicePrefix(nandpath));
+		snprintf(kernelPath, sizeof(kernelPath), "%s:/sneek/kernel.bin", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
 	if(!CheckFile(kernelPath))
 	{
 		gprintf("File not found.\n");
@@ -164,10 +164,10 @@ int neekIsNeek2o(const char* nandpath)
 	int found = 0;
 	char tempPath[100];
 	if(isWiiU())
-		snprintf(tempPath, sizeof(tempPath), "%s:/sneek/vwiikernel.bin", DeviceHandler::GetDevicePrefix(nandpath));
+		snprintf(tempPath, sizeof(tempPath), "%s:/sneek/vwiikernel.bin", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
 	
 	if(!isWiiU() || !CheckFile(tempPath))
-		snprintf(tempPath, sizeof(tempPath), "%s:/sneek/kernel.bin", DeviceHandler::GetDevicePrefix(nandpath));
+		snprintf(tempPath, sizeof(tempPath), "%s:/sneek/kernel.bin", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
 	
 	if(!CheckFile(tempPath))
 		return -1;
@@ -268,7 +268,7 @@ bool neek2oSetBootSettings(NEEK_CFG* neek_config, u64 TitleID, u32 Magic, u64 re
 	if(!(neek_config->config & NCON_EXT_RETURN_TO))
 	{
 		// delete residual "return to" file if last shutdown was unclean.
-		snprintf(tmpPath, sizeof(tmpPath), "%s:/sneek/reload.sys", DeviceHandler::GetDevicePrefix(nandpath));
+		snprintf(tmpPath, sizeof(tmpPath), "%s:/sneek/reload.sys", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
 		if(CheckFile(tmpPath))
 			RemoveFile(tmpPath);
 	}
@@ -320,7 +320,7 @@ int neek2oSetNAND(const char* nandpath)
 	u32 i = 0;
 	
 	char nandconfigPath[100];
-	snprintf(nandconfigPath, sizeof(nandconfigPath), "%s:/sneek/nandcfg.bin", DeviceHandler::GetDevicePrefix(nandpath));
+	snprintf(nandconfigPath, sizeof(nandconfigPath), "%s:/sneek/nandcfg.bin", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
 	
 	// vWii neek2o - different filename but not the same format?
 	//if(isWiiU())

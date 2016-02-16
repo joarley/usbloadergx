@@ -51,14 +51,11 @@ s32 WBFS_Init(u32 device)
 s32 WBFS_ReInit(u32 device)
 {
 	WBFS_CloseAll();
-	DeviceHandler::Instance()->UnMountAllUSB();
+	DeviceHandler::Instance()->UnmountAllUSB();
 	DeviceHandler::Instance()->MountAllUSB();
 	s32 ret = -1;
 
-	if(Settings.MultiplePartitions)
-		ret = WBFS_OpenAll();
-	else
-		ret = WBFS_OpenPart(Settings.partition);
+	ret = WBFS_OpenAll();
 
 	return ret;
 }
@@ -66,7 +63,7 @@ s32 WBFS_ReInit(u32 device)
 s32 WBFS_OpenAll()
 {
 	int ret = -1;
-	int partCount = DeviceHandler::GetUSBPartitionCount();
+	int partCount = DeviceHandler::Instance()->GetTotalPartitionCount();
 
 	for(int i = 0; i < partCount; ++i)
 	{
@@ -79,8 +76,8 @@ s32 WBFS_OpenAll()
 
 s32 WBFS_OpenPart(int part_num)
 {
-	PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(part_num);
-	if(!usbHandle || part_num < 0 || part_num >= DeviceHandler::GetUSBPartitionCount())
+	PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(part_num);
+	if(!usbHandle || part_num < 0 || part_num >= DeviceHandler::Instance()->GetTotalPartitionCount())
 		return -1;
 
 	// close
@@ -89,8 +86,8 @@ s32 WBFS_OpenPart(int part_num)
 	if(part_num >= (int) WbfsList.size())
 		WbfsList.resize(part_num+1);
 
-	int portPart = DeviceHandler::PartitionToPortPartition(part_num);
-	int usbPort = DeviceHandler::PartitionToUSBPort(part_num);
+	int portPart = usbHandle->GetPartitionPos(DeviceHandler::Instance()->GetPartitionPrefix(part_num));
+	int usbPort = DeviceHandler::Instance()->PartitionToPortUSB(part_num);
 
 	gprintf("\tWBFS_OpenPart: filesystem: %s, start sector %u, sector count: %u\n", usbHandle->GetFSName(portPart), usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart));
 

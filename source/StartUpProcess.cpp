@@ -172,31 +172,8 @@ bool StartUpProcess::USBSpinUp()
 {
 	drawCancel = true;
 	Timer countDown;
-	bool started0 = false;
-	bool started1 = false;
-	bool started2 = false;
-	bool started3 = false;
-	bool started4 = false;
-	bool started5 = false;
-	bool started6 = false;
-	bool started7 = false;
 
-	const DISC_INTERFACE * handle0 = NULL;
-	const DISC_INTERFACE * handle1 = NULL;
-	const DISC_INTERFACE * handle2 = NULL;
-	const DISC_INTERFACE * handle3 = NULL;
-	const DISC_INTERFACE * handle4 = NULL;
-	const DISC_INTERFACE * handle5 = NULL;
-	const DISC_INTERFACE * handle6 = NULL;
-	const DISC_INTERFACE * handle7 = NULL;
-	handle0 = DeviceHandler::GetUSB0Interface();
-	handle1 = DeviceHandler::GetUSB1Interface();
-	handle2 = DeviceHandler::GetUSB2Interface();
-	handle3 = DeviceHandler::GetUSB3Interface();
-	handle4 = DeviceHandler::GetUSB4Interface();
-	handle5 = DeviceHandler::GetUSB5Interface();
-	handle6 = DeviceHandler::GetUSB6Interface();
-	handle7 = DeviceHandler::GetUSB7Interface();
+	bool started = false;
 
 	// wait 20 sec for the USB to spin up...stupid slow ass HDD
 	do
@@ -206,9 +183,9 @@ bool StartUpProcess::USBSpinUp()
 		Draw();
 		sleep(1);
 		if(usbstorage_init())
-		messageTxt->SetTextf("USB Iniciado com sucesso");
+			messageTxt->SetTextf("USB Iniciado com sucesso");
 		else
-		messageTxt->SetTextf("Erro ao iniciar USB");
+			messageTxt->SetTextf("Erro ao iniciar USB");
 		Draw();
 		sleep(2);
 
@@ -218,81 +195,14 @@ bool StartUpProcess::USBSpinUp()
 		Draw();
 		sleep(2);
 
-		if(handle0 && numDevices > 0) {
-			started0 = (handle0->startup() && handle0->isInserted());
-
-			messageTxt->SetTextf("Porta 0 não iniciada %d", started0);
-			Draw();
-			sleep(2);
+		for(int i = 0; i < numDevices; i++){
+			bool portStarted = (DeviceHandler::Instance()->GetInterfaceUSB(i)->startup()
+					&& DeviceHandler::Instance()->GetInterfaceUSB(i)->isInserted());
+			messageTxt->SetTextf("Porta %d não iniciada %d", i, portStarted);
+			sleep(1);
+			if(portStarted)
+				started = true;
 		}
-
-		if(handle1 && numDevices > 1) {
-			started1 = (handle1->startup() && handle1->isInserted());
-
-			messageTxt->SetTextf("Porta 1 não iniciada %d", started1);
-			Draw();
-			sleep(2);
-		}
-
-		if(handle2 && numDevices > 2) {
-			started2 = (handle2->startup() && handle2->isInserted());
-
-			messageTxt->SetTextf("Porta 2 não iniciada %d", started2);
-			Draw();
-			sleep(2);
-		}
-
-		if(handle3 && numDevices > 3) {
-			started3 = (handle3->startup() && handle3->isInserted());
-
-			messageTxt->SetTextf("Porta 3 não iniciada %d", started3);
-			Draw();
-			sleep(2);
-		}
-
-		if(handle4 && numDevices > 4) {
-			started4 = (handle4->startup() && handle4->isInserted());
-
-			messageTxt->SetTextf("Porta 4 não iniciada %d", started4);
-			Draw();
-			sleep(2);
-		}
-
-		if(handle5 && numDevices > 5) {
-			started5 = (handle5->startup() && handle5->isInserted());
-
-			messageTxt->SetTextf("Porta 5 não iniciada %d", started5);
-			Draw();
-			sleep(2);
-		}
-
-		if(handle6 && numDevices > 6) {
-			started6 = (handle6->startup() && handle6->isInserted());
-
-			messageTxt->SetTextf("Porta 6 não iniciada %d", started6);
-			Draw();
-			sleep(2);
-		}
-
-		if(handle7 && numDevices > 7) {
-			started7 = (handle7->startup() && handle7->isInserted());
-
-			messageTxt->SetTextf("Porta 7 não iniciada %d", started7);
-			Draw();
-			sleep(2);
-		}
-
-		if(   (!handle0 && started0)
-		|| (!handle1 && started1)
-		|| (!handle2 && started2)
-		|| (!handle3 && started3)
-		|| (!handle4 && started4)
-		|| (!handle5 && started5)
-		|| (!handle6 && started6)
-		|| (!handle7 && started7)) {
-			break;
-		}
-
 
 		UpdatePads();
 		for(int i = 0; i < 4; ++i)
@@ -303,14 +213,13 @@ bool StartUpProcess::USBSpinUp()
 
 		messageTxt->SetTextf("Waiting for HDD: %i sec left\n", 20-(int)countDown.elapsed());
 		Draw();
-		usleep(50000);
+		sleep(2);
 	}
 	while(countDown.elapsed() < 20.f);
 
 	drawCancel = false;
 
-	return (started0 || started1 || started2 || started3 || started4 || started5
-		|| started6 || started7);
+	return started;
 }
 
 int StartUpProcess::Run(int argc, char *argv[])
@@ -361,24 +270,17 @@ int StartUpProcess::Execute()
 	SetTextf("Using %sIOS %i\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
 
 
-	SetTextf("Passo 1");
-	sleep(3);
-
 	SetupPads();
 
-	SetTextf("Passo 2");
-	sleep(3);
 	SetTextf("Initialize sd card\n");
 	DeviceHandler::Instance()->MountSD();
 
 	if(Settings.USBAutoMount == ON)
 	{
 		SetTextf("Initialize usb device\n");
+		DeviceHandler::Instance()->MountAllUSB();
 		USBSpinUp();
-		DeviceHandler::Instance()->MountAllUSB(false);
 	}
-	SetTextf("Passo 4");
-	sleep(3);
 
 	SetTextf("Loading config files\n");
 
@@ -388,63 +290,16 @@ int StartUpProcess::Execute()
 	gprintf("\tLoading game statistics...%s\n", GameStatistics.Load(Settings.ConfigPath) ? "done" : "failed");
 	gprintf("\tLoading game categories...%s\n", GameCategories.Load(Settings.ConfigPath) ? "done" : "failed");
 	if(Settings.CacheTitles)
-	gprintf("\tLoading cached titles...%s\n", GameTitles.ReadCachedTitles(Settings.titlestxt_path) ? "done" : "failed (using default)");
-	if(Settings.LoaderIOS != IOS_GetVersion())
-	{
-		SetTextf("Passo 5");
-		sleep(3);
-		SetTextf("Reloading to config file's cIOS...\n");
-
-		// Unmount devices
-		DeviceHandler::DestroyInstance();
-		if(Settings.USBAutoMount == ON)
-		usbstorage_deinit();
-
-		// Shut down pads
-		WPAD_Shutdown();
-		WUPC_Shutdown();
-
-		// Loading now the cios setup in the settings
-		IosLoader::LoadAppCios();
-
-		SetTextf("Reloaded into cIOS %i R%i\n", IOS_GetVersion(), IOS_GetRevision());
-
-		SetTextf("Passo 6");
-		sleep(3);
-		// Re-Mount devices
-		SetTextf("Reinitializing devices...\n");
-		DeviceHandler::Instance()->MountSD();
-		if(Settings.USBAutoMount == ON)
-		{
-			USBSpinUp();
-			DeviceHandler::Instance()->MountAllUSB(false);
-		}
-
-		// Start pads again
-		SetupPads();
-	}
-
-	SetTextf("Passo 7");
-	sleep(3);
-
-	if(!IosLoader::IsHermesIOS() && !IosLoader::IsD2X())
-	{
-		Settings.USBPort = 0;
-	}
-	else if(Settings.USBAutoMount == ON)
-	{
-		SetTextf("Mounting USB Port to all\n");
-		DeviceHandler::Instance()->MountAllUSB();
-	}
+		gprintf("\tLoading cached titles...%s\n", GameTitles.ReadCachedTitles(Settings.titlestxt_path) ? "done" : "failed (using default)");
 
 	// enable isfs permission if using IOS+AHB or Hermes v4
 	if(IOS_GetVersion() < 200 || (IosLoader::IsHermesIOS() && IOS_GetRevision() == 4))
 	{
 		SetTextf("Patching %sIOS%d...\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
 		if (IosPatch_RUNTIME(true, false, false, false) == ERROR_PATCH)
-		gprintf("Patching %sIOS%d failed!\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
+			gprintf("Patching %sIOS%d failed!\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
 		else
-		NandTitles.Get(); // get NAND channel's titles
+			NandTitles.Get(); // get NAND channel's titles
 	}
 
 	// We only initialize once for the whole session
@@ -457,7 +312,7 @@ int StartUpProcess::Execute()
 	SetTextf("Loading resources\n");
 	// Do not allow banner grid mode without AHBPROT
 	// this function does nothing if it was already initiated before
-	if(   !SystemMenuResources::Instance()->IsLoaded() && !SystemMenuResources::Instance()->Init()
+	if(!SystemMenuResources::Instance()->IsLoaded() && !SystemMenuResources::Instance()->Init()
 	&& Settings.gameDisplay == BANNERGRID_MODE)
 	{
 		Settings.gameDisplay = LIST_MODE;

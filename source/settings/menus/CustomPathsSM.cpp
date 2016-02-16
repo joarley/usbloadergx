@@ -289,7 +289,7 @@ int CustomPathsSM::GetMenuInternal()
 
 		titleTxt->SetText(tr( "Nand Emu Path" ));
 		ChangePath(Settings.NandEmuPath, sizeof(Settings.NandEmuPath));
-		if(strncasecmp(DeviceHandler::PathToFSName(Settings.NandEmuPath), "FAT", 3) != 0)
+		if(strncasecmp(DeviceHandler::Instance()->GetFSName(Settings.NandEmuPath), "FAT", 3) != 0)
 		{
 			snprintf(Settings.NandEmuPath, sizeof(Settings.NandEmuPath), oldPath);
 			WindowPrompt(tr("Error:"), tr("Nand Emulation only works on FAT/FAT32 partitions!"), tr("OK"));
@@ -304,7 +304,7 @@ int CustomPathsSM::GetMenuInternal()
 
 		titleTxt->SetText(tr( "Nand Emu Channel Path" ));
 		int result = ChangePath(Settings.NandEmuChanPath, sizeof(Settings.NandEmuChanPath));
-		if(strncasecmp(DeviceHandler::PathToFSName(Settings.NandEmuChanPath), "FAT", 3) != 0)
+		if(strncasecmp(DeviceHandler::Instance()->GetFSName(Settings.NandEmuChanPath), "FAT", 3) != 0)
 		{
 			snprintf(Settings.NandEmuChanPath, sizeof(Settings.NandEmuChanPath), oldPath);
 			WindowPrompt(tr("Error:"), tr("Nand Emulation only works on FAT/FAT32 partitions!"), tr("OK"));

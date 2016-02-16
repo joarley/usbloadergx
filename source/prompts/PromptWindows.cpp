@@ -1155,7 +1155,7 @@ int DiscWait(const char *title, const char *msg, const char *btn1Label, const ch
 			if (ret >= 0) break;
 
 			timerTxt.SetTextf("%i %s", (int) (30-(timenow-starttime)), tr( "seconds left" ));
-			DeviceHandler::Instance()->UnMountAllUSB();
+			DeviceHandler::Instance()->UnmountAllUSB();
 			DeviceHandler::Instance()->MountAllUSB();
 			timenow = time(0);
 		}
@@ -1191,8 +1191,9 @@ int DiscWait(const char *title, const char *msg, const char *btn1Label, const ch
  ***************************************************************************/
 int FormatingPartition(const char *title, int part_num)
 {
-	PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(part_num);
-	int portPart = DeviceHandler::PartitionToPortPartition(part_num);
+	int portPart = DeviceHandler::Instance()->PartitionToPortUSB(part_num);
+	PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleUSB(portPart);
+
 
 	char text[255];
 	sprintf(text, "%s: %.2fGB", tr( "Partition" ), usbHandle->GetSize(portPart) / GB_SIZE);
@@ -1231,7 +1232,7 @@ int FormatingPartition(const char *title, int part_num)
 	ResumeGui();
 
 	VIDEO_WaitVSync();
-	ret = WBFS_Format(usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart), DeviceHandler::PartitionToUSBPort(part_num));
+	ret = WBFS_Format(usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart), portPart);
 
 	if (ret < 0)
 	{

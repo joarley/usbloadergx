@@ -15,12 +15,12 @@
 
 static int FindGamePartition()
 {
-	int partCount = DeviceHandler::GetUSBPartitionCount();
+	int partCount = DeviceHandler::Instance()->GetTotalPartitionCount();
 
 	// Loop through all WBFS partitions first to check them in case IOS249 Rev < 18
 	for(int i = 0; i < partCount; ++i)
 	{
-		if(DeviceHandler::GetFilesystemType(USB1+i) != PART_FS_WBFS)
+		if(DeviceHandler::Instance()->GetFilesystemType(i) != PART_FS_WBFS)
 			continue;
 
 		if (WBFS_OpenPart(i) == 0)
@@ -38,9 +38,9 @@ static int FindGamePartition()
 	// Loop through FAT/NTFS/EXT partitions, and find the first partition with games on it (if there is one)
 	for(int i = 0; i < partCount; ++i)
 	{
-		if(DeviceHandler::GetFilesystemType(USB1+i) != PART_FS_NTFS &&
-		   DeviceHandler::GetFilesystemType(USB1+i) != PART_FS_FAT &&
-		   DeviceHandler::GetFilesystemType(USB1+i) != PART_FS_EXT)
+		if(DeviceHandler::Instance()->GetFilesystemType(i) != PART_FS_NTFS &&
+			DeviceHandler::Instance()->GetFilesystemType(i) != PART_FS_FAT &&
+			DeviceHandler::Instance()->GetFilesystemType(i) != PART_FS_EXT)
 		{
 			continue;
 		}
@@ -51,24 +51,14 @@ static int FindGamePartition()
 		u32 count;
 		// Get the game count...
 		WBFS_GetCount(i, &count);
-
-		if (count > 0)
-		{
-			Settings.partition = i;
-			return 0;
-		}
-
-		if(firstValidPartition < 0)
-			firstValidPartition = i;
+		if(count > 0)
+			firstValidPartition = 1;
 
 		WBFS_Close(i);
 	}
 
 	if(firstValidPartition >= 0)
-	{
-		Settings.partition = firstValidPartition;
 		return 0;
-	}
 
 	return -1;
 }
@@ -89,16 +79,15 @@ static int PartitionChoice()
 		if(part_num >= 0)
 		{
 			if(IosLoader::IsWaninkokoIOS() && NandTitles.VersionOf(TITLE_ID(1, IOS_GetVersion())) < 18 &&
-			   (DeviceHandler::GetFilesystemType(USB1+part_num) == PART_FS_NTFS ||
-				DeviceHandler::GetFilesystemType(USB1+part_num) == PART_FS_FAT ||
-				DeviceHandler::GetFilesystemType(USB1+part_num) == PART_FS_EXT))
+			   (DeviceHandler::Instance()->GetFilesystemType(part_num) == PART_FS_NTFS ||
+					   DeviceHandler::Instance()->GetFilesystemType(part_num) == PART_FS_FAT ||
+					   DeviceHandler::Instance()->GetFilesystemType(part_num) == PART_FS_EXT))
 			{
 				WindowPrompt(tr("Warning:"), tr("You are trying to select a FAT32/NTFS/EXT partition with cIOS 249 Rev < 18. This is not supported. Continue on your own risk."), tr("OK"));
 			}
 
 			ret = WBFS_OpenPart(part_num);
 
-			Settings.partition = part_num;
 			Settings.Save();
 		}
 	}

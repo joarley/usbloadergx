@@ -37,7 +37,6 @@ using namespace std;
 
 static const char wbfs_fat_dir[] = "/wbfs";
 static const char invalid_path[] = "/\\:|<>?*\"'";
-extern u32 hdd_sector_size[8];
 extern int install_abort_signal;
 
 inline bool isGameID(const char *id)
@@ -59,10 +58,10 @@ s32 Wbfs_Fat::Open()
 {
 	Close();
 
-	if(partition < (u32) DeviceHandler::GetUSBPartitionCount())
+	if(partition < (u32) DeviceHandler::Instance()->GetTotalPartitionCount())
 	{
-		PartitionHandle *usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(partition);
-		int portPart = DeviceHandler::PartitionToPortPartition(partition);
+		PartitionHandle *usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(partition);
+		int portPart = DeviceHandler::Instance()->PartitionToPortUSB(partition);
 		if (lba == usbHandle->GetLBAStart(portPart))
 		{
 			snprintf(wbfs_fs_drive, sizeof(wbfs_fs_drive), "%s:", usbHandle->MountName(portPart));
@@ -101,7 +100,7 @@ wbfs_disc_t* Wbfs_Fat::OpenDisc(u8 *discid)
 		wbfs_disc_t *iso_file = (wbfs_disc_t *) calloc(sizeof(wbfs_disc_t), 1);
 		if (iso_file == NULL) return NULL;
 		// mark with a special wbfs_part
-		wbfs_iso_file.wbfs_sec_sz = hdd_sector_size[usbport];
+		wbfs_iso_file.wbfs_sec_sz = usbstorage_get_sector_size(usbport);
 		iso_file->p = &wbfs_iso_file;
 		iso_file->header = (wbfs_disc_info_t*) malloc(sizeof(wbfs_disc_info_t));
 		if(!iso_file->header)
@@ -322,12 +321,12 @@ u64 Wbfs_Fat::EstimateGameSize()
 {
 	wbfs_t *part = NULL;
 	u64 size = (u64) 143432 * 2 * 0x8000ULL;
-	u32 n_sector = size / hdd_sector_size[usbport];
+	u32 n_sector = size / usbstorage_get_sector_size(usbport);
 
 	// init a temporary dummy part
 	// as a placeholder for wbfs_size_disc
 	wbfs_set_force_mode(1);
-	part = wbfs_open_partition(nop_rw_sector, nop_rw_sector, NULL, hdd_sector_size[usbport], n_sector, 0, 1);
+	part = wbfs_open_partition(nop_rw_sector, nop_rw_sector, NULL, usbstorage_get_sector_size(usbport), n_sector, 0, 1);
 	wbfs_set_force_mode(0);
 	if (!part) return -1;
 
@@ -697,7 +696,7 @@ wbfs_t* Wbfs_Fat::OpenPart(char *fname)
 	wbfs_set_force_mode(1);
 
 	part = wbfs_open_partition(split_read_sector, nop_rw_sector, //readonly //split_write_sector,
-			&split, hdd_sector_size[usbport], split.total_sec, 0, 0);
+			&split, usbstorage_get_sector_size(usbport), split.total_sec, 0, 0);
 
 	wbfs_set_force_mode(0);
 
@@ -758,7 +757,7 @@ wbfs_t* Wbfs_Fat::CreatePart(u8 *id, char *path)
 	// 1 cluster less than 4gb
 	u64 OPT_split_size = 4LL * 1024 * 1024 * 1024 - 32 * 1024;
 
-	if(Settings.GameSplit == GAMESPLIT_NONE && DeviceHandler::GetFilesystemType(USB1+Settings.partition) != PART_FS_FAT)
+	if(Settings.GameSplit == GAMESPLIT_NONE)
 		OPT_split_size = (u64) 100LL * 1024 * 1024 * 1024 - 32 * 1024;
 
 	else if(Settings.GameSplit == GAMESPLIT_2GB)
@@ -783,7 +782,7 @@ wbfs_t* Wbfs_Fat::CreatePart(u8 *id, char *path)
 
 	wbfs_set_force_mode(1);
 
-	part = wbfs_open_partition(split_read_sector, split_write_sector, &split, hdd_sector_size[usbport], n_sector, 0, 1);
+	part = wbfs_open_partition(split_read_sector, split_write_sector, &split, usbstorage_get_sector_size(usbport), n_sector, 0, 1);
 
 	wbfs_set_force_mode(0);
 
@@ -856,5 +855,5 @@ int Wbfs_Fat::GetFragList(u8 *id)
 	int ret = FindFilename(id, fname, sizeof(fname));
 	if (!ret) return -1;
 
-	return get_frag_list_for_file(fname, id, GetFSType(), lba, hdd_sector_size[usbport]);
+	return get_frag_list_for_file(fname, id, GetFSType(), lba, usbstorage_get_sector_size(usbport));
 }

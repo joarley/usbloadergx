@@ -24,8 +24,6 @@
 #define ES_MODULE_END	(ES_MODULE_START + 0x4000)
 #define ES_HACK_OFFSET	4
 
-extern u32 hdd_sector_size[8];
-
 /*
  * Buffer variables for the IOS info to avoid loading it several times
  */
@@ -129,7 +127,7 @@ s32 IosLoader::LoadGameCios(s32 ios)
 
 	// Remount devices after reloading IOS.
 	DeviceHandler::Instance()->MountSD();
-	DeviceHandler::Instance()->MountAllUSB(true);
+	DeviceHandler::Instance()->MountAllUSB();
 	Disc_Init();
 
 	return ret;
@@ -498,26 +496,19 @@ bool IosLoader::is_NandEmu_compatible(const char *NandEmuPath, s32 ios)
 		// Check if EmuNAND partition is on USB devices
 		if(strncmp(NandEmuPath, "usb", 3) == 0)
 		{
-			int part_num = atoi(NandEmuPath+3);
-			int usbport = DeviceHandler::PartitionToUSBPort(part_num-USB1);
+			int part = DeviceHandler::Instance()->GetPartitionNumber(NandEmuPath);
+			int usbport = DeviceHandler::Instance()->PartitionToPortUSB(part);
 
 			// Check if this is the first FAT32 partition on the drive
-			for(int dev = USB1; dev <= part_num; dev++)
-			{
-				if(strncmp(DeviceHandler::GetFSName(dev), "FAT", 3) == 0)
-				{
-					if(dev == part_num)
-						break;
-					else
-						return false;
-				}
-			}
-
-			// Check if the partition is primary
-			// EmuNAND works with Primary and Extended partitions, no need to check the PartitionTableType
+			if(DeviceHandler::Instance()->GetFilesystemType(part) != PART_FS_FAT)
+				return false;
+			const char* partPrefix = DeviceHandler::Instance()->GetPartitionPrefix(NandEmuPath);
+			PartitionHandle* handle = DeviceHandler::Instance()->GetHandleFromPartition(part);
+			if(handle->GetPartitionPos(partPrefix) != 0)
+				return false;
 
 			// Check HDD sector size. Only 512 bytes/sector is supported by d2x < v4
-			if(hdd_sector_size[usbport] != BYTES_PER_SECTOR)
+			if(usbstorage_get_sector_size(usbport) != BYTES_PER_SECTOR)
 				return false;
 		}
 	}

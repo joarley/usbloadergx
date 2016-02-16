@@ -104,22 +104,22 @@ HardDriveSM::~HardDriveSM()
 
 		if(Settings.USBPort != NewSettingsUSBPort)
 		{
-			DeviceHandler::Instance()->UnMountAllUSB();
+			DeviceHandler::Instance()->UnmountAllUSB();
 			Settings.USBPort = NewSettingsUSBPort;
 			DeviceHandler::Instance()->MountAllUSB();
 
-			if(Settings.partition >= DeviceHandler::GetUSBPartitionCount())
-				Settings.partition = 0;
+			//if(Settings.partition >= DeviceHandler::Instance()->GetTotalPartitionCount())
+			//	Settings.partition = 0;
 
 			// set -1 to edit meta.xml arguments
 			NewSettingsUSBPort = -1;
 		}
 
 		WBFS_Init(WBFS_DEVICE_USB);
-		if(Settings.MultiplePartitions)
+		//if(Settings.MultiplePartitions)
 			WBFS_OpenAll();
-		else
-			WBFS_OpenPart(Settings.partition);
+		//else
+		//	WBFS_OpenPart(Settings.partition);
 
 		//! Reload the new game titles
 		gameList.ReadGameList();
@@ -139,13 +139,13 @@ void HardDriveSM::SetOptionValues()
 	int Idx = 0;
 
 	//! Settings: Game/Install Partition
-	PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(Settings.partition);
-	int checkPart = DeviceHandler::PartitionToPortPartition(Settings.partition);
+	//PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(Settings.partition);
+	//int usbPort = DeviceHandler::Instance()->PartitionToPortUSB(Settings.partition);
 
 	//! Get the partition name and it's size in GB's
-	if(usbHandle)
-		Options->SetValue(Idx++, "%s (%.2fGB)", usbHandle->GetFSName(checkPart), usbHandle->GetSize(checkPart)/GB_SIZE);
-	else
+	//if(usbHandle)
+	//	Options->SetValue(Idx++, "%s (%.2fGB)", usbHandle->GetFSName(checkPart), usbHandle->GetSize(checkPart)/GB_SIZE);
+	//else
 		Options->SetValue(Idx++, tr("Not Initialized"));
 
 	//! Settings: Multiple Partitions
@@ -197,23 +197,23 @@ int HardDriveSM::GetMenuInternal()
 	if (ret == ++Idx)
 	{
 		// Init the USB device if mounted after launch.
-		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(Settings.partition);
-		if(usbHandle == NULL)
-			DeviceHandler::Instance()->MountAllUSB(true);
+		//PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartitionUSB(Settings.partition);
+		//if(usbHandle == NULL)
+		//	DeviceHandler::Instance()->MountAllUSB(true);
 
 		// Select the next valid partition, even if that's the same one
-		int fs_type = 0;
-		int ios = IOS_GetVersion();
-		int retries = 20;
-		do
-		{
-			Settings.partition = (Settings.partition + 1) % DeviceHandler::GetUSBPartitionCount();
-			fs_type = DeviceHandler::GetFilesystemType(USB1+Settings.partition);
-		}
-		while (!IsValidPartition(fs_type, ios) && --retries > 0);
+		//int fs_type = 0;
+		//int ios = IOS_GetVersion();
+		//int retries = 20;
+		//do
+		//{
+		//	Settings.partition = (Settings.partition + 1) % DeviceHandler::GetPartitionCount();
+		//	fs_type = DeviceHandler::GetFilesystemType(USB1+Settings.partition);
+		//}
+		//while (!IsValidPartition(fs_type, ios) && --retries > 0);
 
-		if(fs_type == PART_FS_FAT && Settings.GameSplit == GAMESPLIT_NONE)
-			Settings.GameSplit = GAMESPLIT_4GB;
+		//if(fs_type == PART_FS_FAT && Settings.GameSplit == GAMESPLIT_NONE)
+		//	Settings.GameSplit = GAMESPLIT_4GB;
 	}
 
 	//! Settings: Multiple Partitions
@@ -253,9 +253,9 @@ int HardDriveSM::GetMenuInternal()
 	{
 		if (++Settings.GameSplit >= GAMESPLIT_MAX)
 		{
-			if(DeviceHandler::GetFilesystemType(USB1+Settings.partition) == PART_FS_FAT)
-				Settings.GameSplit = GAMESPLIT_2GB;
-			else
+			//if(DeviceHandler::GetFilesystemType(USB1+Settings.partition) == PART_FS_FAT)
+			//	Settings.GameSplit = GAMESPLIT_2GB;
+			//else
 				Settings.GameSplit = GAMESPLIT_NONE;
 		}
 	}
@@ -297,13 +297,13 @@ int HardDriveSM::GetMenuInternal()
 		if(choice)
 		{
 			StartProgress(tr("Synchronizing..."), tr("Please wait..."), 0, false, false);
-			int partCount = DeviceHandler::GetUSBPartitionCount();
+			int partCount = DeviceHandler::Instance()->GetTotalPartitionCount();
 			for(int i = 0; i < partCount; ++i)
 			{
 				ShowProgress(i, partCount);
-				if(DeviceHandler::GetFilesystemType(USB1+i) == PART_FS_FAT)
+				if(DeviceHandler::Instance()->GetFilesystemType(i) == PART_FS_FAT)
 				{
-					PartitionHandle *usb = DeviceHandler::Instance()->GetUSBHandleFromPartition(i);
+					PartitionHandle *usb = DeviceHandler::Instance()->GetHandleFromPartition(i);
 					if(!usb) continue;
 					struct statvfs stats;
 					char drive[20];

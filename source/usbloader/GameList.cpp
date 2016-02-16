@@ -171,7 +171,7 @@ int GameList::ReadGameList()
 	}
 	else
 	{
-		int partitions = DeviceHandler::GetUSBPartitionCount();
+		int partitions = DeviceHandler::Instance()->GetTotalPartitionCount();
 
 		for(int part = 0; part < partitions; ++part)
 		{

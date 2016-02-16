@@ -21,10 +21,10 @@ int SelectPartitionMenu()
 	int ret = -1;
 
 	//create the partitionlist
-	for (int cnt = 0; cnt < DeviceHandler::GetUSBPartitionCount(); cnt++)
+	for (int cnt = 0; cnt < DeviceHandler::Instance()->GetTotalPartitionCount(); cnt++)
 	{
-		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(cnt);
-		int portPart = DeviceHandler::PartitionToPortPartition(cnt);
+		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(cnt);
+		int portPart = DeviceHandler::Instance()->PartitionToPortUSB(cnt);
 		/* Calculate size in gigabytes */
 		f32 size = usbHandle->GetSize(portPart) / GB_SIZE;
 

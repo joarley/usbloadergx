@@ -27,7 +27,7 @@ s32 Wbfs::Init(u32 device)
 		case WBFS_DEVICE_USB:
 			/* Initialize USB storage */
 
-			if (DeviceHandler::GetUSBPartitionCount() > 0)
+			if (DeviceHandler::Instance()->GetTotalPartitionCount() > 0)
 			{
 				/* Setup callbacks */
 				readCallback = __ReadUSB;

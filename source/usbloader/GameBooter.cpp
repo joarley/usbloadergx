@@ -59,7 +59,6 @@
 //appentrypoint has to be global because of asm
 u32 AppEntrypoint = 0;
 
-extern u32 hdd_sector_size[8];
 extern "C"
 {
 	syssram* __SYS_LockSram();
@@ -155,6 +154,7 @@ void GameBooter::SetupNandEmu(u8 NandEmuMode, const char *NandEmuPath, struct di
 	if(NandEmuMode && strchr(NandEmuPath, '/'))
 	{
 		int partition = -1;
+		int usbPort = -1;
 
 		//! Create save game path and title.tmd for not existing saves
 		CreateSavePath(&gameHeader, NandEmuPath);
@@ -167,19 +167,19 @@ void GameBooter::SetupNandEmu(u8 NandEmuMode, const char *NandEmuPath, struct di
 		if(strncmp(NandEmuPath, "usb", 3) == 0)
 		{
 			//! Set which partition to use (USB only)
-			partition = atoi(NandEmuPath+3)-1;
-			Set_Partition(DeviceHandler::PartitionToPortPartition(partition));
-			DeviceHandler::Instance()->UnMount(USB1 + partition);
+			partition = DeviceHandler::Instance()->GetPartitionNumber(NandEmuPath);
+			int usbPort = DeviceHandler::Instance()->PartitionToPortUSB(partition);
+			Set_Partition(usbPort);
+			DeviceHandler::Instance()->UnmountUSB(usbPort);
 		}
 		else
-			DeviceHandler::Instance()->UnMountSD();
+			DeviceHandler::Instance()->UnmountSD();
 
 		Enable_Emu(strncmp(NandEmuPath, "usb", 3) == 0 ? EMU_USB : EMU_SD);
 
 		//! Mount USB to start game, SD is not required
 		if(strncmp(NandEmuPath, "usb", 3) == 0)
-			DeviceHandler::Instance()->Mount(USB1 + partition);
-
+			DeviceHandler::Instance()->MountUSB(usbPort);
 	}
 }
 
@@ -228,7 +228,6 @@ void GameBooter::ShutDownDevices(int gameUSBPort)
 	//! Shadow mload - Only needed on some games with Hermes v5.1 (Check is inside the function)
 	shadow_mload();
 	usbstorage_deinit();
-	USB_Deinitialize();
 }
 
 int GameBooter::BootGame(struct discHdr *gameHdr)
@@ -287,7 +286,7 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 
 	//! Remember game's USB port
 	int partition = gameList.GetPartitionNumber(gameHeader.id);
-	int usbport = DeviceHandler::PartitionToUSBPort(partition);
+	int usbport = DeviceHandler::Instance()->PartitionToPortUSB(partition);
 
 	//! Prepare alternate dol settings
 	SetupAltDOL(gameHeader.id, alternatedol, alternatedoloffset);
@@ -393,7 +392,7 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	else
 	{
 		//! shutdown now and avoid later crashs with free if memory gets overwritten by channel
-		ShutDownDevices(DeviceHandler::PartitionToUSBPort(std::max(atoi(NandEmuPath+3)-1, 0)));
+		ShutDownDevices(DeviceHandler::Instance()->PartitionToPortUSB(DeviceHandler::Instance()->GetPartitionNumber(NandEmuPath)));
 		gprintf("\tChannel Boot\n");
 		/* Setup video mode */
 		Disc_SelectVMode(videoChoice, false, NULL, NULL);
@@ -455,7 +454,7 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 	if(currentMIOS == DIOS_MIOS || currentMIOS == QUADFORCE_USB)
 	{
 		// Check Main GameCube Path location
-		if(strncmp(Settings.GameCubePath, "sd", 2) == 0 || strncmp(DeviceHandler::PathToFSName(Settings.GameCubePath), "FAT", 3) != 0)
+		if(strncmp(Settings.GameCubePath, "sd", 2) == 0 || strncmp(DeviceHandler::Instance()->GetFSName(Settings.GameCubePath), "FAT", 3) != 0)
 		{
 			WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to set your 'Main GameCube Path' to an USB FAT32 partition."),LoaderName), tr("OK"));
 			return -1;
@@ -470,36 +469,25 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 		}
 
 		// Check if the partition is the first primary partition on the drive
-		bool found = false;
-		int USB_partNum = DeviceHandler::PathToDriveType(Settings.GameCubePath)-USB1;
-		int USBport_partNum = DeviceHandler::PartitionToPortPartition(USB_partNum);
-		int usbport = DeviceHandler::PartitionToUSBPort(USB_partNum);
-		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(USB_partNum);
-		for(int partition = 0 ; partition <= USBport_partNum; partition++)
-		{
-			if(usbHandle->GetPartitionTableType(partition) != MBR)
-				continue;
-
-			if(partition == USBport_partNum)
-			{
-				found = true;
-				break;
-			}
-		}
-		if(!found)
+		int USB_partNum = DeviceHandler::Instance()->GetPartitionNumber(Settings.GameCubePath);
+		const char* prefix = DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath);
+		int usbport = DeviceHandler::Instance()->PartitionToPortUSB(USB_partNum);
+		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(USB_partNum);
+		int partition = usbHandle->GetPartitionPos(prefix);
+		if(usbHandle->GetPartitionTableType(partition) != MBR && partition == 0)
 		{
 			WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to set your 'Main GameCube Path' on the first primary partition of the Hard Drive."),LoaderName), tr("OK"));
 			return -1;
 		}
 
 		// Check HDD sector size. Only 512 bytes/sector is supported by DIOS MIOS
-		if(hdd_sector_size[usbport] != BYTES_PER_SECTOR)
+		if(usbstorage_get_sector_size(usbport) != BYTES_PER_SECTOR)
 		{
 			WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to use a 512 bytes/sector Hard Drive."),LoaderName), tr("OK"));
 			return -1;
 		}
 
-		if(usbHandle->GetPartitionClusterSize(usbHandle->GetLBAStart(USBport_partNum)) > 32768)
+		if(usbHandle->GetPartitionClusterSize(usbHandle->GetLBAStart(partition)) > 32768)
 		{
 			WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to use a partition with 32k bytes/cluster or less."),LoaderName), tr("OK"));
 			return -1;
@@ -542,12 +530,13 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 	}
 
 	// Check Ocarina and cheat file location. the .gct file need to be located on the same partition than the game.
-	if(gameHdr->type != TYPE_GAME_GC_DISC && ocarinaChoice && strcmp(DeviceHandler::GetDevicePrefix(RealPath), DeviceHandler::GetDevicePrefix(Settings.Cheatcodespath)) != 0)
+	if(gameHdr->type != TYPE_GAME_GC_DISC && ocarinaChoice &&
+			strcmp(DeviceHandler::Instance()->GetPartitionPrefix(RealPath), DeviceHandler::Instance()->GetPartitionPrefix(Settings.Cheatcodespath)) != 0)
 	{
 		char path[255], destPath[255];
 		int res = -1;
 		snprintf(path, sizeof(path), "%s%.6s.gct", Settings.Cheatcodespath, (char *)gameHdr->id);
-		snprintf(destPath, sizeof(destPath), "%s:/DMLTemp.gct", DeviceHandler::GetDevicePrefix(RealPath));
+		snprintf(destPath, sizeof(destPath), "%s:/DMLTemp.gct", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 
 		gprintf("DML: Copying %s to %s \n", path, destPath);
 		res = CopyFile(path, destPath);
@@ -626,7 +615,8 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 	if(ocarinaChoice)
 	{
 		// Check if the .gct folder is on the same partition than the game, if not load the temporary .gct file.
-		if(strcmp(DeviceHandler::GetDevicePrefix(RealPath), DeviceHandler::GetDevicePrefix(Settings.Cheatcodespath)) == 0)
+		if(strcmp(DeviceHandler::Instance()->GetPartitionPrefix(RealPath),
+				DeviceHandler::Instance()->GetPartitionPrefix(Settings.Cheatcodespath)) == 0)
 		{
 			const char *CheatPath = strchr(Settings.Cheatcodespath, '/');
 			if(!CheatPath) CheatPath = "";
@@ -742,7 +732,7 @@ int GameBooter::BootDevolution(struct discHdr *gameHdr)
 		return -1;
 	}
 
-	if(strncmp(DeviceHandler::PathToFSName(RealPath), "FAT", 3) != 0)
+	if(strncmp(DeviceHandler::Instance()->GetFSName(RealPath), "FAT", 3) != 0)
 	{
 		WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to set your 'Main GameCube Path' to an USB FAT32 partition."),LoaderName), tr("OK"));
 		return -1;
@@ -808,7 +798,7 @@ int GameBooter::BootDevolution(struct discHdr *gameHdr)
 
 	// Make sure the directory exists
 	char devoPath[20];
-	snprintf(devoPath, sizeof(devoPath), "%s:/apps/gc_devo", DeviceHandler::GetDevicePrefix(RealPath));
+	snprintf(devoPath, sizeof(devoPath), "%s:/apps/gc_devo", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 	CreateSubfolder(devoPath);
 
 	// Get the starting cluster (and device ID) for the ISO file 1
@@ -864,7 +854,7 @@ int GameBooter::BootDevolution(struct discHdr *gameHdr)
 		}
 		else // same for all games
 		{
-			snprintf(DEVO_memCard, sizeof(DEVO_memCard), "%s:/apps/gc_devo/memcard.bin", DeviceHandler::GetDevicePrefix(RealPath));
+			snprintf(DEVO_memCard, sizeof(DEVO_memCard), "%s:/apps/gc_devo/memcard.bin", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 		}
 
 		// check if file doesn't exist or is less than 512KB (59 Blocks)
@@ -985,36 +975,20 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 	if(gameHdr->type != TYPE_GAME_GC_DISC && strncmp(RealPath, "usb", 3) == 0)
 	{
 		// Check Main GameCube Path location
-		if(strncmp(DeviceHandler::PathToFSName(Settings.GameCubePath), "FAT", 3) != 0)
+		if(strncmp(DeviceHandler::Instance()->GetFSName(Settings.GameCubePath), "FAT", 3) != 0)
 		{
 			WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to set your 'Main GameCube Path' to an USB FAT32 partition."),LoaderName), tr("OK"));
 			return -1;
 		}
 
 		// Check if the partition is a primary
-		int USB_partNum = DeviceHandler::PathToDriveType(Settings.GameCubePath)-USB1;
-		int USBport_partNum = DeviceHandler::PartitionToPortPartition(USB_partNum);
-		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(USB_partNum);
-		if(usbHandle->GetPartitionTableType(USBport_partNum) != MBR)
-		{
-			WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to set your 'Main GameCube Path' on the first primary FAT32 partition."),LoaderName), tr("OK"));
-			return -1;
-		}
-
-		// check if the partition is the first FAT32 of the drive
 		bool found = false;
-		for(int partition = 0 ; partition <= USBport_partNum; partition++)
-		{
-			if(strncmp(usbHandle->GetFSName(partition), "FAT", 3) != 0)
-				continue;
-
-			if(partition == USBport_partNum)
-			{
-				found = true;
-				break;
-			}
-		}
-		if(!found)
+		int USB_partNum = DeviceHandler::Instance()->GetPartitionNumber(Settings.GameCubePath);
+		const char* prefix = DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath);
+		int usbport = DeviceHandler::Instance()->PartitionToPortUSB(USB_partNum);
+		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(USB_partNum);
+		int partition = usbHandle->GetPartitionPos(prefix);
+		if(usbHandle->GetPartitionTableType(partition) != MBR && partition == 0)
 		{
 			WindowPrompt(tr("Error:"), fmt(tr("To run GameCube games with %s you need to set your 'Main GameCube Path' on the first primary FAT32 partition."),LoaderName), tr("OK"));
 			return -1;
@@ -1171,26 +1145,27 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		if(Settings.GameCubeSource >= GC_SOURCE_AUTO && strncmp(Settings.GameCubePath, "usb", 3) == 0)
 		{
 			if(WindowPrompt("", tr("Which device do you want to use for Nintendont files?"), tr("SD"), tr("USB")) == 1)
-				snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::GetDevicePrefix(Settings.GameCubeSDPath));
+				snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubeSDPath));
 			else
-				snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::GetDevicePrefix(Settings.GameCubePath));
+				snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
 		}
 		else if(Settings.GameCubeSource == GC_SOURCE_MAIN)
 		{
-			snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::GetDevicePrefix(Settings.GameCubePath));
+			snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
 		}
 		else
-			snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::GetDevicePrefix(Settings.GameCubeSDPath));
+			snprintf(RealPath, sizeof(RealPath), "%s:/", DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubeSDPath));
 	}
 
 
 	// Check Ocarina and cheat file location. the .gct file need to be located on the same partition than the game.
-	if(ocarinaChoice && strcmp(DeviceHandler::GetDevicePrefix(RealPath), DeviceHandler::GetDevicePrefix(Settings.Cheatcodespath)) != 0)
+	if(ocarinaChoice &&
+			strcmp(DeviceHandler::Instance()->GetPartitionPrefix(RealPath), DeviceHandler::Instance()->GetPartitionPrefix(Settings.Cheatcodespath)) != 0)
 	{
 		char path[255], destPath[255];
 		int res = -1;
 		snprintf(path, sizeof(path), "%s%.6s.gct", Settings.Cheatcodespath, (char *)gameHdr->id);
-		snprintf(destPath, sizeof(destPath), "%s:/NINTemp.gct", DeviceHandler::GetDevicePrefix(RealPath));
+		snprintf(destPath, sizeof(destPath), "%s:/NINTemp.gct", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 
 		gprintf("NIN: Copying %s to %s \n", path, destPath);
 		res = CopyFile(path, destPath);
@@ -1206,7 +1181,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 	if(NINRev < 336 && (ocarinaChoice || (ninDebugChoice && !isWiiU())))
 	{
 		char kenobiwii_path[30];
-		snprintf(kenobiwii_path, sizeof(kenobiwii_path), "%s:/sneek/kenobiwii.bin", DeviceHandler::GetDevicePrefix(RealPath));
+		snprintf(kenobiwii_path, sizeof(kenobiwii_path), "%s:/sneek/kenobiwii.bin", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 		if(!CheckFile(kenobiwii_path))
 		{
 			// try to copy kenobiwii from the other device
@@ -1214,7 +1189,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 			{
 				char kenobiwii_srcpath[30];
 
-				snprintf(kenobiwii_srcpath, sizeof(kenobiwii_srcpath), "%s:/sneek/kenobiwii.bin", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::GetDevicePrefix(Settings.GameCubePath));
+				snprintf(kenobiwii_srcpath, sizeof(kenobiwii_srcpath), "%s:/sneek/kenobiwii.bin", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
 				gprintf("kenobiwii source path = %s \n", kenobiwii_srcpath);
 				if(CheckFile(kenobiwii_srcpath))
 				{
@@ -1247,12 +1222,12 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 	{
 		// Check controller.ini file in priority, then controllers folder, for compatibility with older nintendont versions.
 		char controllerini_path[30];
-		snprintf(controllerini_path, sizeof(controllerini_path), "%s:/controller.ini", DeviceHandler::GetDevicePrefix(RealPath));
+		snprintf(controllerini_path, sizeof(controllerini_path), "%s:/controller.ini", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 		if(!CheckFile(controllerini_path) && strcmp(Settings.GameCubePath, Settings.GameCubeSDPath) != 0)
 		{
 			// try to copy controller.ini from the other device
 			char controllerini_srcpath[30];
-			snprintf(controllerini_srcpath, sizeof(controllerini_srcpath), "%s:/controller.ini", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::GetDevicePrefix(Settings.GameCubePath));
+			snprintf(controllerini_srcpath, sizeof(controllerini_srcpath), "%s:/controller.ini", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
 			gprintf("Controller.ini source path = %s \n", controllerini_srcpath);
 			if(CheckFile(controllerini_srcpath))
 			{
@@ -1271,12 +1246,12 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 			{
 
 				// Check gamepath:/controllers/ folder
-				snprintf(controllerini_path, sizeof(controllerini_path), "%s:/controllers/", DeviceHandler::GetDevicePrefix(RealPath));
+				snprintf(controllerini_path, sizeof(controllerini_path), "%s:/controllers/", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 				if(!CheckFile(controllerini_path) && strcmp(Settings.GameCubePath, Settings.GameCubeSDPath) != 0)
 				{
 					// try to copy controllers folder from the other device
 					char controllerini_srcpath[30];
-					snprintf(controllerini_srcpath, sizeof(controllerini_srcpath), "%s:/controllers/", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::GetDevicePrefix(Settings.GameCubePath));
+					snprintf(controllerini_srcpath, sizeof(controllerini_srcpath), "%s:/controllers/", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
 					gprintf("Controllers folder source path = %s \n", controllerini_srcpath);
 					if(CheckFile(controllerini_srcpath))
 					{
@@ -1288,7 +1263,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 					}
 					else if(NINRev < 304)
 					{
-						snprintf(controllerini_path, sizeof(controllerini_path), "%s:/controller.ini", DeviceHandler::GetDevicePrefix(RealPath));
+						snprintf(controllerini_path, sizeof(controllerini_path), "%s:/controller.ini", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 						if(WindowPrompt(tr("Warning:"), fmt(tr("To use HID with %s you need the %s file."), LoaderName, controllerini_path), tr("Continue"), tr("Cancel")) == 0)
 						return -1;
 					}
@@ -1359,7 +1334,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 	if(ocarinaChoice)
 	{
 		// Check if the .gct folder is on the same partition than the game, if not load the temporary .gct file.
-		if(strcmp(DeviceHandler::GetDevicePrefix(RealPath), DeviceHandler::GetDevicePrefix(Settings.Cheatcodespath)) == 0)
+		if(strcmp(DeviceHandler::Instance()->GetPartitionPrefix(RealPath), DeviceHandler::Instance()->GetPartitionPrefix(Settings.Cheatcodespath)) == 0)
 		{
 			const char *CheatPath = strchr(Settings.Cheatcodespath, '/');
 			if(!CheatPath) CheatPath = "";
@@ -1486,13 +1461,13 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		char NINCfgPath[17];
 
 		// Nintendont loader partition
-		snprintf(NINCfgPath, sizeof(NINCfgPath), "%s:/nincfg.bin", DeviceHandler::GetDevicePrefix(NIN_loader_path));
+		snprintf(NINCfgPath, sizeof(NINCfgPath), "%s:/nincfg.bin", DeviceHandler::Instance()->GetPartitionPrefix(NIN_loader_path));
 		RemoveFile(NINCfgPath);
 
 		// game partition
 		if(strncmp(NINCfgPath, RealPath, 4) != 0)
 		{
-			snprintf(NINCfgPath, sizeof(NINCfgPath), "%s:/nincfg.bin", DeviceHandler::GetDevicePrefix(RealPath));
+			snprintf(NINCfgPath, sizeof(NINCfgPath), "%s:/nincfg.bin", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 			RemoveFile(NINCfgPath);
 		}
 
@@ -1501,7 +1476,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 	{
 		// Nintendont Config file path
 		char NINCfgPath[17];
-		snprintf(NINCfgPath, sizeof(NINCfgPath), "%s:/nincfg.bin", DeviceHandler::GetDevicePrefix(NIN_loader_path));
+		snprintf(NINCfgPath, sizeof(NINCfgPath), "%s:/nincfg.bin", DeviceHandler::Instance()->GetPartitionPrefix(NIN_loader_path));
 		gprintf("NIN: Cfg path : %s \n", NINCfgPath);
 
 		//write config file to nintendont's partition root.
@@ -1523,7 +1498,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		if(strncmp(NINCfgPath, RealPath, 2) != 0)
 		{
 			char NINDestPath[17];
-			snprintf(NINDestPath, sizeof(NINDestPath), "%s:/nincfg.bin", DeviceHandler::GetDevicePrefix(RealPath));
+			snprintf(NINDestPath, sizeof(NINDestPath), "%s:/nincfg.bin", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 			gprintf("NIN: Copying %s to %s...", NINCfgPath, NINDestPath);
 			if(CopyFile(NINCfgPath, NINDestPath) < 0)
 			{
@@ -1630,37 +1605,26 @@ int GameBooter::BootNeek(struct discHdr *gameHdr)
 		// Todo: add uStealth'd HDD check here, might need neek version detection too.
 
 		// Check partition format // Assume SD is always FAT32
-		if(strncmp(DeviceHandler::PathToFSName(NandEmuPath), "FAT", 3) != 0)
+		if(strncmp(DeviceHandler::Instance()->GetFSName(NandEmuPath), "FAT", 3) != 0)
 		{
 			WindowPrompt(tr("Error:"), tr("To use neek you need to set your 'Emulated NAND Channel Path' to a FAT32 partition."), tr("OK"));
 			return -1;
 		}
 
 		// Check if the partition is the first primary partition on the drive - TODO : verify if it also needs to be the first partition of the drive.
-		bool found = false;
-		int USB_partNum = DeviceHandler::PathToDriveType(NandEmuPath)-USB1;
-		int USBport_partNum = DeviceHandler::PartitionToPortPartition(USB_partNum);
-		int usbport = DeviceHandler::PartitionToUSBPort(USB_partNum);
-		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetUSBHandleFromPartition(USB_partNum);
-		for(int partition = 0 ; partition <= USBport_partNum; partition++)
-		{
-			if(usbHandle->GetPartitionTableType(partition) != MBR)
-				continue;
-
-			if(partition == USBport_partNum)
-			{
-				found = true;
-				break;
-			}
-		}
-		if(!found)
+		int USB_partNum = DeviceHandler::Instance()->GetPartitionNumber(Settings.GameCubePath);
+		const char* prefix = DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath);
+		int usbport = DeviceHandler::Instance()->PartitionToPortUSB(USB_partNum);
+		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(USB_partNum);
+		int partition = usbHandle->GetPartitionPos(prefix);
+		if(usbHandle->GetPartitionTableType(partition) != MBR && partition == 0)
 		{
 			WindowPrompt(tr("Error:"), tr("To use neek you need to set your 'Emulated NAND Channel Path' on the first primary partition of the Hard Drive."), tr("OK"));
 			return -1;
 		}
 
 		// Check HDD sector size. Only 512 bytes/sector is supported by neek?
-		if(neekMode == 0 && hdd_sector_size[usbport] != BYTES_PER_SECTOR) // neek2o supports 3TB+ HDD
+		if(neekMode == 0 && usbstorage_get_sector_size(usbport) != BYTES_PER_SECTOR) // neek2o supports 3TB+ HDD
 		{
 			WindowPrompt(tr("Error:"), tr("To use neek you need to use a 512 bytes/sector Hard Drive."), tr("OK"));
 			return -1;
@@ -1677,7 +1641,7 @@ int GameBooter::BootNeek(struct discHdr *gameHdr)
 	if(!returnToChoice)
 	{
 		// delete residual "return to" file if last shutdown was unclean.
-		snprintf(tempPath, sizeof(tempPath), "%s:/sneek/reload.sys", DeviceHandler::GetDevicePrefix(NandEmuPath));
+		snprintf(tempPath, sizeof(tempPath), "%s:/sneek/reload.sys", DeviceHandler::Instance()->GetPartitionPrefix(NandEmuPath));
 		if(CheckFile(tempPath))
 			RemoveFile(tempPath);
 	}
