@@ -25,6 +25,8 @@
 #include "StartUpProcess.h"
 #include "usbloader/usb_new.h"
 #include "sys.h"
+#include "gecko.h"
+#include "wifi_debug.h"
 
 extern "C"
 {
@@ -32,21 +34,8 @@ extern "C"
 	void __exception_setreload(int t);
 }
 
-void WiimotePowerPressed(s32 chan)
-{
-	exit(0);
-}
-
-void WiiPowerPressed()
-{
-	exit(0);
-}
-
 int main(int argc, char *argv[])
 {
-	SYS_SetPowerCallback(WiiPowerPressed);
-	WPAD_SetPowerButtonCallback(WiimotePowerPressed);
-
 	__exception_setreload(20);
 	// activate magic access rights
 	MagicPatches(1);
@@ -55,9 +44,14 @@ int main(int argc, char *argv[])
 	// video frame buffers must be in mem1
 	MEM2_init(48);
 	// init gecko
-	InitGecko();
-	// redirect stdout and stderr to gecko
-	USBGeckoOutput();
+	if(InitGecko())
+	{
+		// redirect stdout and stderr to gecko
+		USBGeckoOutput();
+	} else if(wifi_debug_init()) {
+		wifi_debug_redirect_output();
+	}
+
 	NandTitles.Get();
 	setlocale(LC_ALL, "en.UTF-8");
 
