@@ -29,7 +29,7 @@
 #include "utils/tools.h"
 #include "system/IosLoader.h"
 #include "menu.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 GCGames *GCGames::instance = NULL;
 
@@ -603,7 +603,7 @@ int nintendontBuildDate(const char *NIN_loader_path, char *NINBuildDate)
 					dateStart[20] = '\0';
 					
 					sprintf(NINBuildDate, "%.20s", dateStart);
-					gprintf("Nintendont Build date : %.20s \n", dateStart);
+					debughelper_printf("Nintendont Build date : %.20s \n", dateStart);
 					
 					found = true;
 					break;

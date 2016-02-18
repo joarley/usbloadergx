@@ -24,6 +24,7 @@ distribution.
 
 #include <malloc.h>
 #include "WiiFont.h"
+#include "../debughelper/debughelper.h"
 
 WiiFont::WiiFont()
 	: header(NULL)
@@ -85,7 +86,7 @@ bool WiiFont::Load(const u8 *file)
 			break;
 		default:
 			// ignore
-			gprintf("Uknown section %.4s\n", (char *) &section->magic);
+			debughelper_printf("Uknown section %.4s\n", (char *) &section->magic);
 			break;
 		}
 	}
@@ -110,7 +111,7 @@ inline bool WiiFont::CheckCmap(u16 charCode, u16 mapValue)
 	{
 		if((*it).second != mapValue)
 		{
-			gprintf("Duplicate characters\n");
+			debughelper_printf("Duplicate characters\n");
 			return false;
 		}
 	}
@@ -171,7 +172,7 @@ bool WiiFont::ParseCmap(CmapEntry *cmapEntry)
 				break;
 			}
 			default:
-				gprintf( "unknown cmap type\n" );
+				debughelper_printf( "unknown cmap type\n" );
 				return false;
 		}
 
@@ -195,7 +196,7 @@ const WiiFont::CharInfo *WiiFont::GetCharInfo(u16 charCode)
 	u16 idx = CharToIdx(charCode);
 	if(idx > cwdh->endIdx)
 	{
-		gprintf( "idx > cwdh->endIdx" );
+		debughelper_printf( "idx > cwdh->endIdx" );
 		return NULL;
 	}
 
@@ -287,7 +288,7 @@ bool WiiFont::Decompress_0x28( unsigned char *outBuf, u32 outLen, const unsigned
 {
 	if( outLen & 3 )// this copies 32 bits at a time, so it probably needs to be aligned
 	{
-		gprintf( "length not aligned to 32 bits\n" );
+		debughelper_printf( "length not aligned to 32 bits\n" );
 		return false;
 	}
 	const u32 root_offset = 5;
@@ -312,7 +313,7 @@ bool WiiFont::Decompress_0x28( unsigned char *outBuf, u32 outLen, const unsigned
 
 			if( !( p > (u8*)inBuf ) && ( p < (u8*)inBuf + inLen ) )
 			{
-				gprintf( "out of range 1\n" );
+				debughelper_printf( "out of range 1\n" );
 				return false;
 			}
 
@@ -330,7 +331,7 @@ bool WiiFont::Decompress_0x28( unsigned char *outBuf, u32 outLen, const unsigned
 		}
 		if( inIdx++ >= ( inLen >> 2 ) )
 		{
-			gprintf( "out of range 2\n" );
+			debughelper_printf( "out of range 2\n" );
 			return false;
 		}
 	}
@@ -355,7 +356,7 @@ u8 *WiiFont::GetUnpackedTexture(u16 sheetNo)
 	u32 uncompressedSize = *(u32*)( data + tglp->dataOffset + off + 4 );
 	if( (uncompressedSize & 0xff000000) != 0x28000000 )// looks like all the sheets in wbf1 and wbf2.brfna are 0x28
 	{
-		gprintf( "Brfna::LoadSheets(): unknown data type\n" );
+		debughelper_printf( "Brfna::LoadSheets(): unknown data type\n" );
 		return NULL;
 	}
 	uncompressedSize = ( __builtin_bswap32( uncompressedSize ) >> 8 );
@@ -365,7 +366,7 @@ u8 *WiiFont::GetUnpackedTexture(u16 sheetNo)
 	}
 	if( uncompressedSize != glgr->sheet_size )
 	{
-		gprintf( "uncompressedSize != glgr->sheet_size  %08x\n", uncompressedSize );
+		debughelper_printf( "uncompressedSize != glgr->sheet_size  %08x\n", uncompressedSize );
 		return NULL;
 	}
 

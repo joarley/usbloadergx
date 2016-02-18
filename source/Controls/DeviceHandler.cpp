@@ -23,10 +23,14 @@
  *
  * for WiiXplorer 2010
  ***************************************************************************/
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+
 #include "usbloader/usb_new.h"
 #include "sdcard/wiisd_io.h"
 #include "DeviceHandler.hpp"
-#include <cstdlib>
+#include "../usbloader/wbfs.h"
 
 DeviceHandler * DeviceHandler::instance = NULL;
 
@@ -47,7 +51,7 @@ void DeviceHandler::DestroyInstance() {
 DeviceHandler::DeviceHandler() {
 	usbstorage_init() ;
 	sdHandle = NULL;
-	memset(usbHandles, NULL, sizeof(PartitionHandle *) * MAX_USB_STORAGE_DEVICES);
+	memset(usbHandles, 0, sizeof(PartitionHandle *) * MAX_USB_STORAGE_DEVICES);
 }
 
 DeviceHandler::~DeviceHandler() {
@@ -58,6 +62,7 @@ DeviceHandler::~DeviceHandler() {
 bool DeviceHandler::MountAll() {
 	MountSD();
 	MountAllUSB();
+	return true;
 }
 
 void DeviceHandler::UnMountAll() {
@@ -73,7 +78,7 @@ bool DeviceHandler::MountSD() {
 	if(!__io_wiisd.isInserted())
 		return false;
 
-	PartitionHandle* sd = new PartitionHandle(__io_wiisd);
+	PartitionHandle* sd = new PartitionHandle(&__io_wiisd);
 	if(sd->GetPartitionCount() < 1)
 	{
 		delete sd;
@@ -91,7 +96,7 @@ bool DeviceHandler::MountUSB(int port) {
 		return true;
 	if(usbstorage_get_num_devices() < port)
 		return false;
-	DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
+	const DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
 
 	if(!interface->startup())
 		return false;
@@ -137,7 +142,7 @@ bool DeviceHandler::IsInsertedUSB(int port) {
 		return false;
 	if(usbstorage_get_num_devices() < port)
 		return false;
-	DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
+	const DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
 
 	if(!interface->startup())
 		return false;
@@ -173,7 +178,7 @@ PartitionHandle* DeviceHandler::GetHandleUSB(int port) const {
 	return usbHandles[port];
 }
 
-PartitionHandle* DeviceHandler::GetHandleFromPartition(int part) const {
+PartitionHandle* DeviceHandler::GetHandleFromPartition(int part) {
 	if(part == SDPartitionNumber)
 		return sdHandle;
 	int port = PartitionToPortUSB(part);
@@ -226,7 +231,7 @@ const char* DeviceHandler::GetFSName(int part) {
 	if(part == SDPartitionNumber)
 		return sdHandle->GetFSName(0);
 
-	char name[10];
+	static char name[10];
 	int portUSB = PartitionToPortUSB(part);
 	if(portUSB >= 0)
 		return "";
@@ -247,7 +252,7 @@ const char* DeviceHandler::GetFSName(const char* path) {
 }
 
 const char* DeviceHandler::GetPartitionPrefix(const char* path) {
-	char ret[10] = "";
+	static char ret[10] = "";
 	if(strncmp(path, "sd", 2) == 0)
 		return "sd";
 	if(strncmp(path, "usb", 3))
@@ -292,6 +297,7 @@ bool DeviceHandler::IsSDPartition(int part) {
 }
 
 const char* DeviceHandler::GetPartitionPrefix(int partition) {
-	char name[10];
+	static char name[10];
 	sprintf(name, "%s%d","usb", partition);
+	return name;
 }

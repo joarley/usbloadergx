@@ -28,7 +28,7 @@ class DeviceHandler
 
 		PartitionHandle * GetHandleSD() const;
 		PartitionHandle * GetHandleUSB(int port) const;
-		PartitionHandle * GetHandleFromPartition(int part) const;
+		PartitionHandle * GetHandleFromPartition(int part);
 		const DISC_INTERFACE *GetInterfaceUSB(int port);
 		int GetFilesystemType(int part);
 		const char * GetFSName(int part);

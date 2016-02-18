@@ -44,6 +44,7 @@
 #include "wad/nandtitle.h"
 #include "wad/wad.h"
 #include "sys.h"
+#include "../../debughelper/debughelper.h"
 
 static const char * OnOffText[] =
 {
@@ -511,7 +512,7 @@ int FeatureSettingsMenu::GetMenuInternal()
 					{
 						// install error - Try to cleanup any partially installed wad data
 						WindowPrompt(tr("EmuNAND Wad Manager"), tr("Install error - Cleaning incomplete data."), tr( "OK" ));
-						//gprintf("Error   : %s\n", wadpath);
+						//debughelper_printf("Error   : %s\n", wadpath);
 						wadFile.UnInstall(Settings.NandEmuChanPath);
 					}
 				}
@@ -544,13 +545,13 @@ int FeatureSettingsMenu::GetMenuInternal()
 							Wad wadFile(wadList->GetFilepath(i), false);
 							if(wadFile.Install(Settings.NandEmuChanPath))
 							{
-								//gprintf("Success : %s\n", wadList->GetFilepath(i));
+								//debughelper_printf("Success : %s\n", wadList->GetFilepath(i));
 								wadList->RemoveEntrie(i);
 								--i;
 							}
 							else 	// install error - Try to cleanup any partially installed wad data
 							{
-								//gprintf("Error   : %s\n", wadList->GetFilepath(i));
+								//debughelper_printf("Error   : %s\n", wadList->GetFilepath(i));
 								wadFile.UnInstall(Settings.NandEmuChanPath);
 							}
 						}
@@ -564,7 +565,7 @@ int FeatureSettingsMenu::GetMenuInternal()
 								Wad wadFile(wadList->GetFilepath(i), false);
 								if(wadFile.UnInstall(Settings.NandEmuChanPath))
 								{
-									//gprintf("uninst. : %s\n", wadList->GetFilepath(i));
+									//debughelper_printf("uninst. : %s\n", wadList->GetFilepath(i));
 									wadList->RemoveEntrie(i);
 									--i;
 								}
@@ -600,7 +601,7 @@ int FeatureSettingsMenu::GetMenuInternal()
 									for(int i = 0; i < wadList->GetFilecount(); i++)
 									{
 										fprintf(f, "%s\r\n", wadList->GetFilepath(i));
-										//gprintf("%s\n", wadList->GetFilepath(i));
+										//debughelper_printf("%s\n", wadList->GetFilepath(i));
 									}
 
 									fclose(f);

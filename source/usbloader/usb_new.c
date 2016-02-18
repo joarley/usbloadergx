@@ -7,7 +7,6 @@ static bool devices_initialized[MAX_USB_STORAGE_DEVICES];
 static usb_device_entry devices[MAX_USB_STORAGE_DEVICES];
 static usbstorage_handle handles[MAX_USB_STORAGE_DEVICES];
 static u32 hdd_sector_size[MAX_USB_STORAGE_DEVICES];
-static DISC_INTERFACE* interfaces[MAX_USB_STORAGE_DEVICES];
 static u8 num_devices = 0;
 static bool started = false;
 
@@ -57,10 +56,6 @@ u32 usbstorage_get_sector_size(int port){
 	if(!devices_initialized[port])
 		return 0;
 	return hdd_sector_size[port];
-}
-
-DISC_INTERFACE* usbstorage_get_disc_interface(int port) {
-	return interfaces[port];
 }
 
 bool usbstorage_startup(int port) {
@@ -146,8 +141,7 @@ bool usbstorage_clear_status(int port)
 		(FN_MEDIUM_READSECTORS) &__usbstorage_ReadSectors##PORT,\
 		(FN_MEDIUM_WRITESECTORS) &__usbstorage_WriteSectors##PORT,\
 		(FN_MEDIUM_CLEARSTATUS) &__usbstorage_ClearStatus##PORT,\
-		(FN_MEDIUM_SHUTDOWN) &__usbstorage_Shutdown##PORT};\
-	interfaces[PORT] = &__io_usbstorage2_port##PORT;
+		(FN_MEDIUM_SHUTDOWN) &__usbstorage_Shutdown##PORT}
 
 DECLARE_PORT(0);
 DECLARE_PORT(1);
@@ -165,3 +159,13 @@ DECLARE_PORT(12);
 DECLARE_PORT(13);
 DECLARE_PORT(14);
 DECLARE_PORT(15);
+
+static const DISC_INTERFACE* interfaces[MAX_USB_STORAGE_DEVICES] = {&__io_usbstorage2_port0, &__io_usbstorage2_port1,
+	&__io_usbstorage2_port2, &__io_usbstorage2_port3, &__io_usbstorage2_port4, &__io_usbstorage2_port5,
+	&__io_usbstorage2_port6, &__io_usbstorage2_port7, &__io_usbstorage2_port8, &__io_usbstorage2_port9,
+	&__io_usbstorage2_port10, &__io_usbstorage2_port11, &__io_usbstorage2_port12, &__io_usbstorage2_port13,
+	&__io_usbstorage2_port14, &__io_usbstorage2_port15};
+
+const DISC_INTERFACE* usbstorage_get_disc_interface(int port) {
+	return interfaces[port];
+}

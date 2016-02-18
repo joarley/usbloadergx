@@ -25,7 +25,7 @@
 #include "lstub.h"
 #include "menu.h"
 #include "video.h"
-#include "gecko.h"
+#include "debughelper/debughelper.h"
 #include "wad/nandtitle.h"
 
 extern "C"
@@ -286,7 +286,7 @@ void ScreenShot()
 
 	if(!CreateSubfolder(Settings.ConfigPath))
 	{
-		gprintf("Can't create screenshot folder\n");
+		debughelper_printf("Can't create screenshot folder\n");
 		return;
 	}
 

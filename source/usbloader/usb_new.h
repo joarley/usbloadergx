@@ -33,7 +33,7 @@ bool usbstorage_init();
 void usbstorage_deinit();
 u8 usbstorage_get_num_devices();
 u32 usbstorage_get_sector_size(int port);
-DISC_INTERFACE * usbstorage_get_disc_interface(int port);
+const DISC_INTERFACE * usbstorage_get_disc_interface(int port);
 bool usbstorage_startup(int port);
 u32 usbstorage_get_capacity(int port);
 bool usbstorage_is_inserted(int port);

@@ -19,7 +19,7 @@
 
 #include "http.h"
 #include "../svnrev.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 extern char incommingIP[50];
 static u8 retryloop = 0;
@@ -231,8 +231,8 @@ struct block downloadfile(const char *url)
 	char* headerformat = "GET %s HTTP/1.0\r\nHost: %s\r\n%sUser-Agent: USBLoaderGX r%s\r\n\r\n";
 	char header[strlen(headerformat) + strlen(path) + strlen(domain) + strlen(referer) + 100];
 	sprintf(header, headerformat, path, domain, referer, GetRev());
-	//gprintf("\nHTTP Request:\n");
-	//gprintf("%s\n",header);
+	//debughelper_printf("\nHTTP Request:\n");
+	//debughelper_printf("%s\n",header);
 
 	//Do the request and get the response
 	send_message(connection, header);
@@ -269,7 +269,7 @@ struct block downloadfile(const char *url)
 					int code;
 					if (sscanf(codep+1, "%d", &code) == 1) 
 					{
-						//gprintf("HTTP response code: %d\n", code);
+						//debughelper_printf("HTTP response code: %d\n", code);
 						if (code == 302) // 302 FOUND (redirected link)
 						{
 							char *ptr = strcasestr((char*)response.data, "Location: ");
@@ -280,18 +280,18 @@ struct block downloadfile(const char *url)
 								*(strchr(newURL, '\r'))=0;
 								
 								redirect = true;
-								//gprintf("New URL to download = %s \n", newURL);
+								//debughelper_printf("New URL to download = %s \n", newURL);
 							}
 							else
 							{
-								//gprintf("HTTP ERROR: %s\n", htstat);
+								//debughelper_printf("HTTP ERROR: %s\n", htstat);
 								free(response.data);
 								return emptyblock;
 							}
 						}
 						if (code >=400) // Not found
 						{
-							//gprintf("HTTP ERROR: %s\n", htstat);
+							//debughelper_printf("HTTP ERROR: %s\n", htstat);
 							free(response.data);
 							return emptyblock;
 						}
@@ -319,7 +319,7 @@ struct block downloadfile(const char *url)
 		u8 * tmp = realloc(response.data, redirected.size);
 		if (tmp == NULL)
 		{
-			//gprintf("Could not allocate enough memory for new URL. Download canceled.\n");
+			//debughelper_printf("Could not allocate enough memory for new URL. Download canceled.\n");
 			free(response.data);
 			free(redirected.data);
 			return emptyblock;

@@ -17,7 +17,7 @@
 #include "mload/modules/dip_plugin_249.h"
 #include "mload/modules/odip_frag.h"
 #include "utils/tools.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #define MEM2_PROT		0x0D8B420A
 #define ES_MODULE_START	((u16 *)0x939F0000)
@@ -193,7 +193,7 @@ s32 IosLoader::ReloadIosKeepingRights(s32 ios)
 		{
 			if (!memcmp(patchme, ticket_check, sizeof(ticket_check)))
 			{
-				gprintf("ReloadIos: Found TMD access rights check at %p\n", patchme);
+				debughelper_printf("ReloadIos: Found TMD access rights check at %p\n", patchme);
 
 				/* Apply patch */
 				patchme[ES_HACK_OFFSET] = 0x23FF; // li r3, 0xFF ; Set full access rights
@@ -238,13 +238,13 @@ u8 IosLoader::GetMIOSInfo()
 				if((*(u32*)(appfile+i+10)) == 'Lite')
 				{
 					currentMIOS = DIOS_MIOS_LITE;
-					gprintf("DIOS MIOS Lite ");
+					debughelper_printf("DIOS MIOS Lite ");
 					currentDMLVersion = GetDMLVersion((char*)(appfile+i+31));
 				}
 				else
 				{
 					currentMIOS = DIOS_MIOS;
-					gprintf("DIOS MIOS ");
+					debughelper_printf("DIOS MIOS ");
 					currentDMLVersion = GetDMLVersion((char*)(appfile+i+27));
 				}
 				break;
@@ -253,7 +253,7 @@ u8 IosLoader::GetMIOSInfo()
 			{
 				currentMIOS = QUADFORCE;
 				char* QF_version = (char*)(appfile+i+10);
-				gprintf("QuadForce v%.1f \n", atof(QF_version));
+				debughelper_printf("QuadForce v%.1f \n", atof(QF_version));
 				if(atof(QF_version) >= 4.0)			currentDMLVersion = DML_VERSION_QUAD_4_0;
 				else if(atof(QF_version) == 3.0)	currentDMLVersion = DML_VERSION_QUAD_3_0;
 				else if(atof(QF_version) == 2.0)	currentDMLVersion = DML_VERSION_QUAD_2_0;
@@ -267,7 +267,7 @@ u8 IosLoader::GetMIOSInfo()
 				if((*(u32*)(appfile+i+32)) == 'May ' && (*(u32*)(appfile+i+44)) == '00:1' && (*(u32*)(appfile+i+48)) == '5:28')
 				{
 					currentMIOS = QUADFORCE_USB;
-					gprintf("QuadForce USB v4.1\n");
+					debughelper_printf("QuadForce USB v4.1\n");
 					currentDMLVersion = DML_VERSION_QUAD_4_1;
 					break;
 				}
@@ -277,7 +277,7 @@ u8 IosLoader::GetMIOSInfo()
 	}
 
 	if(currentMIOS == DEFAULT_MIOS)
-		gprintf("MIOS / cMIOS \n");
+		debughelper_printf("MIOS / cMIOS \n");
 
 	return currentMIOS;
 }
@@ -298,7 +298,7 @@ u8 IosLoader::GetDMLVersion(char* releaseDate)
 	}
 
 	// Current installed version
-	gprintf("built on %s\n", releaseDate);
+	debughelper_printf("built on %s\n", releaseDate);
 
 	struct tm time;
 	strptime(releaseDate, "%b %d %Y %H:%M:%S", &time);
@@ -532,7 +532,7 @@ void IosLoader::LoadIOSModules(s32 ios, s32 ios_rev)
 		ehc_module_size = size_ehcmodule_5;
 		dip_plugin = odip_frag;
 		dip_plugin_size = odip_frag_size;
-		gprintf("Loading ehc v5 and opendip module\n");
+		debughelper_printf("Loading ehc v5 and opendip module\n");
 
 		load_modules(ech_module, ehc_module_size, dip_plugin, dip_plugin_size);
 	}
@@ -547,7 +547,7 @@ void IosLoader::LoadIOSModules(s32 ios, s32 ios_rev)
 		{
 			if(mload_init() >= 0)
 			{
-				gprintf("Loading dip module for Waninkoko's cios\n");
+				debughelper_printf("Loading dip module for Waninkoko's cios\n");
 				mload_module((u8 *) dip_plugin_249, dip_plugin_249_size);
 				mload_close();
 			}

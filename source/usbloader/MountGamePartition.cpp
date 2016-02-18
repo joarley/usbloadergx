@@ -12,6 +12,7 @@
 #include "settings/GameTitles.h"
 #include "xml/GameTDB.hpp"
 #include "utils/ShowError.h"
+#include "../debughelper/debughelper.h"
 
 static int FindGamePartition()
 {
@@ -110,7 +111,7 @@ static int PartitionChoice()
 int MountGamePartition(bool ShowGUI)
 {
 	s32 ret = -1;
-	gprintf("MountGamePartition()\n");
+	debughelper_printf("MountGamePartition()\n");
 
 	s32 wbfsinit = WBFS_Init(WBFS_DEVICE_USB);
 
@@ -144,7 +145,7 @@ int MountGamePartition(bool ShowGUI)
 		}
 	}
 
-	gprintf("\tDisc_Init\n");
+	debughelper_printf("\tDisc_Init\n");
 	ret = Disc_Init();
 	if (ret < 0)
 	{
@@ -153,7 +154,7 @@ int MountGamePartition(bool ShowGUI)
 		Sys_LoadMenu();
 	}
 
-	gprintf("LoadTitlesFromGameTDB\n");
+	debughelper_printf("LoadTitlesFromGameTDB\n");
 	//! gameList is loaded in GameTitles.LoadTitlesFromGameTDB after cache file load
 	//! for speed up purpose. If titles override active, load game list here.
 	if(Settings.titlesOverride)

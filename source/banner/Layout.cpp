@@ -24,6 +24,7 @@ distribution.
 #include "SystemMenu/SystemMenuResources.h"
 #include "Layout.h"
 #include "WiiFont.h"
+#include "../debughelper/debughelper.h"
 
 Layout::Layout()
 	: header(0)
@@ -208,7 +209,7 @@ bool Layout::Load(const u8 *brlyt)
 				group_stack.pop();
 		}
 		else {
-			gprintf("Uknown layout section: %08X\n", section->magic);
+			debughelper_printf("Uknown layout section: %08X\n", section->magic);
 		}
 	}
 	return true;

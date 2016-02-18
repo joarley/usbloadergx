@@ -40,6 +40,7 @@ SOURCES		:=	source \
 				source/homebrewboot \
 				source/themes \
 				source/menu \
+				source/debughelper \
 				source/memory \
 				source/FileOperations \
 				source/ImageOperations \

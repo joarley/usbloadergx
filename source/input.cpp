@@ -22,7 +22,6 @@
 #include "input.h"
 #include "GUI/gui.h"
 #include "sys.h"
-#include "gecko.h"
 
 int rumbleRequest[4] = { 0, 0, 0, 0 };
 GuiTrigger userInput[4];

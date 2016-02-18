@@ -21,7 +21,7 @@
 #include "settings/CSettings.h"
 #include "input.h"
 #include "sys.h"
-#include "gecko.h"
+#include "debughelper/debughelper.h"
 
 #define GP_FIFO_SIZE (256 * 1024 * 3)
 static unsigned int *xfb[2] = { NULL, NULL }; // Double buffered
@@ -452,7 +452,7 @@ void Menu_DrawTPLImg(f32 xpos, f32 ypos, f32 zpos, f32 width, f32 height, GXTexO
  ***************************************************************************/
 s32 TakeScreenshot(const char *path)
 {
-	gprintf("\nTakeScreenshot(%s)", path);
+	debughelper_printf("\nTakeScreenshot(%s)", path);
 	int size = (2 * vmode->fbWidth * vmode->xfbHeight + 31) & ~31;
 
 	u8 * buffer = (u8 *) memalign(32, size);

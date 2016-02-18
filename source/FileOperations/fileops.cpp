@@ -40,7 +40,7 @@
 #include "language/gettext.h"
 #include "DirList.h"
 #include "fileops.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #define BLOCKSIZE			   70*1024	  //70KB
 #define VectorResize(List) if(List.capacity()-List.size() == 0) List.reserve(List.size()+100)
@@ -457,7 +457,7 @@ extern "C" bool RemoveDirectory(const char *path)
 			ShowProgress(tr("Deleting directories..."), dir.GetFilename(i), 0, done, fileCount, false, false);
 			RemoveFile(dir.GetFilepath(i));
 			done++;
-			gprintf("%s\n", dir.GetFilepath(i));
+			debughelper_printf("%s\n", dir.GetFilepath(i));
 		}
 	}
 

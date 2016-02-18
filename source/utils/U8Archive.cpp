@@ -21,7 +21,7 @@
 
 #include "ash.h"
 #include "lz77.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "U8Archive.h"
 #include "uncompress.h"
 
@@ -45,13 +45,13 @@ void U8Archive::SetData( const u8 *stuff, u32 len )
 	data = NULL;
 	if( !stuff || len < 0x40 )
 	{
-		gprintf( "SetData(): !stuff || len < 0x40  %p %08x\n", stuff, len );
+		debughelper_printf( "SetData(): !stuff || len < 0x40  %p %08x\n", stuff, len );
 		return;
 	}
 	stuff = FindU8Tag( stuff, len );
 	if( !stuff )
 	{
-		gprintf( "U8 tag not found\n" );
+		debughelper_printf( "U8 tag not found\n" );
 		return;
 	}
 	const U8Header * binHdr = (const U8Header *)stuff;
@@ -99,12 +99,12 @@ u8 *U8Archive::GetFile( const char *path, u32 *size ) const
 	s32 entryNo = EntryFromPath( path );
 	if( entryNo < 1 )
 	{
-		//gprintf( "U8: entry wasn\'t found in the archive  \"%s\"\n", path );
+		//debughelper_printf( "U8: entry wasn\'t found in the archive  \"%s\"\n", path );
 		return NULL;
 	}
 	if( fst[ entryNo ].filetype )
 	{
-		gprintf( "U8: \"%s\" is a folder\n", path );
+		debughelper_printf( "U8: \"%s\" is a folder\n", path );
 		return NULL;
 	}
 	if( size )
@@ -123,7 +123,7 @@ u8 *U8Archive::GetFile( u32 fstIdx, u32 *size ) const
 
 	if( fstIdx >= fst[0].filelen || fst[ fstIdx ].filetype )
 	{
-		gprintf( "%i is a folder\n", fstIdx );
+		debughelper_printf( "%i is a folder\n", fstIdx );
 		return NULL;
 	}
 
@@ -157,7 +157,7 @@ u8 *U8Archive::DecompressCopy( const u8 * stuff, u32 len, u32 *size ) const
 		ret = DecompressAsh( stuff, len );
 		if( !ret )
 		{
-			gprintf( "out of memory\n" );
+			debughelper_printf( "out of memory\n" );
 			return NULL;
 		}
 	}
@@ -171,7 +171,7 @@ u8 *U8Archive::DecompressCopy( const u8 * stuff, u32 len, u32 *size ) const
 		ret = (u8*) memalign(32, ALIGN32(len));
 		if(!ret)
 		{
-			gprintf("out of memory\n");
+			debughelper_printf("out of memory\n");
 			return NULL;
 		}
 		// function can not fail at this point
@@ -199,7 +199,7 @@ u8 *U8Archive::DecompressCopy( const u8 * stuff, u32 len, u32 *size ) const
 		ret = (u8*)memalign( 32, ALIGN32( len ) );
 		if( !ret )
 		{
-			gprintf( "out of memory\n" );
+			debughelper_printf( "out of memory\n" );
 			return NULL;
 		}
 		memcpy( ret, stuff, len );
@@ -257,7 +257,7 @@ u8* U8Archive::GetFileFromFd( u32 fd, u32 *size )const
 	}
 	if( fst[ fd ].filetype )
 	{
-		gprintf( "U8: \"%s\" is a folder\n", FstName( &fst[ fd ] ) );
+		debughelper_printf( "U8: \"%s\" is a folder\n", FstName( &fst[ fd ] ) );
 		return NULL;
 	}
 	if( size )
@@ -312,7 +312,7 @@ u32 U8Archive::NextEntryInFolder( u32 current, u32 directory ) const
 
 s32 U8Archive::EntryFromPath( const char *path, int d ) const
 {
-	//gprintf( "EntryFromPath( \"%s\", %d )\n", path, d );
+	//debughelper_printf( "EntryFromPath( \"%s\", %d )\n", path, d );
 	while( *path == '/' )
 	{
 		path++;
@@ -320,7 +320,7 @@ s32 U8Archive::EntryFromPath( const char *path, int d ) const
 
 	if( !fst[ d ].filetype )
 	{
-		gprintf("ERROR!!  %s is not a directory\n", FstName( &fst[ d ] ) );
+		debughelper_printf("ERROR!!  %s is not a directory\n", FstName( &fst[ d ] ) );
 		return -1;
 	}
 
@@ -384,7 +384,7 @@ bool U8NandArchive::SetFile( const char* nandPath )
 	// open file
 	if( (fd = ISFS_Open( nandPath, ISFS_OPEN_READ ) ) < 0 )
 	{
-		gprintf( "U8NandArchive:  ISFS_Open( \"%s\" ) failed\n", nandPath );
+		debughelper_printf( "U8NandArchive:  ISFS_Open( \"%s\" ) failed\n", nandPath );
 		return false;
 	}
 
@@ -394,7 +394,7 @@ bool U8NandArchive::SetFile( const char* nandPath )
 	if( ret < 0 )
 	{
 		CloseFile();
-		gprintf( "U8NandArchive:  ISFS_GetFileStats( \"%s\" ) failed\n", nandPath );
+		debughelper_printf( "U8NandArchive:  ISFS_GetFileStats( \"%s\" ) failed\n", nandPath );
 		return false;
 	}
 
@@ -403,7 +403,7 @@ bool U8NandArchive::SetFile( const char* nandPath )
 	if( !buffer )
 	{
 		CloseFile();
-		gprintf( "U8NandArchive: enomem\n" );
+		debughelper_printf( "U8NandArchive: enomem\n" );
 		return false;
 	}
 
@@ -412,7 +412,7 @@ bool U8NandArchive::SetFile( const char* nandPath )
 	{
 		free( buffer );
 		CloseFile();
-		gprintf( "U8NandArchive: ISFS_Read( 0x800 ) = %i\n", ret );
+		debughelper_printf( "U8NandArchive: ISFS_Read( 0x800 ) = %i\n", ret );
 		return false;
 	}
 
@@ -422,7 +422,7 @@ bool U8NandArchive::SetFile( const char* nandPath )
 	{
 		free( buffer );
 		CloseFile();
-		gprintf( "U8NandArchive: didn't see a U8 tag\n" );
+		debughelper_printf( "U8NandArchive: didn't see a U8 tag\n" );
 		return false;
 	}
 
@@ -440,7 +440,7 @@ bool U8NandArchive::SetFile( const char* nandPath )
 		if( fst )
 			free( fst );
 		CloseFile();
-		gprintf( "U8NandArchive: error reading fst\n" );
+		debughelper_printf( "U8NandArchive: error reading fst\n" );
 	}
 
 	// set name table pointer
@@ -453,7 +453,7 @@ bool U8NandArchive::SetFile( const char* nandPath )
 
 u8* U8NandArchive::GetFileAllocated( const char *path, u32 *size ) const
 {
-	//gprintf( "U8NandArchive::GetFileAllocated( %s )\n" );
+	//debughelper_printf( "U8NandArchive::GetFileAllocated( %s )\n" );
 	if( !path || !fst )
 	{
 		return NULL;
@@ -463,12 +463,12 @@ u8* U8NandArchive::GetFileAllocated( const char *path, u32 *size ) const
 	int f = EntryFromPath( path, 0 );
 	if( f < 1 || f >= (int)fst[ 0 ].filelen )
 	{
-		gprintf( "U8: \"%s\" wasn't found in the archive.\n", path );
+		debughelper_printf( "U8: \"%s\" wasn't found in the archive.\n", path );
 		return NULL;
 	}
 	if( fst[ f ].filetype )
 	{
-		gprintf( "U8: \"%s\" is a folder\n", path );
+		debughelper_printf( "U8: \"%s\" is a folder\n", path );
 		return NULL;
 	}
 
@@ -476,7 +476,7 @@ u8* U8NandArchive::GetFileAllocated( const char *path, u32 *size ) const
 	u8* ret = (u8*)memalign( 32, RU( fst[ f ].filelen, 32 ) );
 	if( !ret )
 	{
-		gprintf( "U8: out of memory\n" );
+		debughelper_printf( "U8: out of memory\n" );
 		return NULL;
 	}
 
@@ -485,8 +485,8 @@ u8* U8NandArchive::GetFileAllocated( const char *path, u32 *size ) const
 			|| ISFS_Read( fd, ret, fst[ f ].filelen ) != (s32)fst[ f ].filelen )
 	{
 		free( ret );
-		gprintf( "U8: error reading data from nand\n" );
-		gprintf( "fd: %i  fst[ fd ].filelen: %08x\n", fd, fst[ f ].filelen );
+		debughelper_printf( "U8: error reading data from nand\n" );
+		debughelper_printf( "fd: %i  fst[ fd ].filelen: %08x\n", fd, fst[ f ].filelen );
 		return NULL;
 	}
 
@@ -500,7 +500,7 @@ u8* U8NandArchive::GetFileAllocated( const char *path, u32 *size ) const
 		if( !ret2 )
 		{
 			free( ret );
-			gprintf( "out of memory\n" );
+			debughelper_printf( "out of memory\n" );
 			return NULL;
 		}
 		free( ret );

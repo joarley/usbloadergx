@@ -13,7 +13,7 @@
 #include "system/IosLoader.h"
 #include "lstub.h"
 #include "sys.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #define EXECUTE_ADDR	((u8 *) 0x92000000)
 #define BOOTER_ADDR		((u8 *) 0x93000000)
@@ -112,7 +112,7 @@ static int RunAppbooter()
 	s32 ret = IosLoader::ReloadIosSafe(58);
 	if(ret < 0 && Settings.EntryIOS != IOS_GetVersion())
 		IosLoader::ReloadIosKeepingRights(Settings.EntryIOS);
-	gprintf("Reloaded to IOS%d\n", IOS_GetVersion());
+	debughelper_printf("Reloaded to IOS%d\n", IOS_GetVersion());
 
 	struct __argv args;
 	SetupARGV(&args);
@@ -147,7 +147,7 @@ static int RunAppbooter()
 		}
 	}
 
-	gprintf("Exiting USBLoaderGX...\n\n");
+	debughelper_printf("Exiting USBLoaderGX...\n\n");
 
 	SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
 	_CPU_ISR_Disable( cpu_isr );

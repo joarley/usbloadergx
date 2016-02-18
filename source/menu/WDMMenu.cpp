@@ -32,7 +32,6 @@
 #include "libs/libwbfs/wiidisc.h"
 #include "usbloader/fstfile.h"
 #include "settings/GameTitles.h"
-#include "gecko.h"
 
 u32 WDMMenu::AlternateDolOffset = 0;
 u32 WDMMenu::AlternateDolParameter = 0;

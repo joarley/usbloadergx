@@ -6,7 +6,7 @@
 #include "language/gettext.h"
 #include "usbloader/playlog.h"
 #include "utils/tools.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 NandTitle NandTitles;
 
@@ -99,14 +99,14 @@ tmd* NandTitle::GetTMD(u64 tid)
 bool NandTitle::GetName(u64 tid, int language, wchar_t* name)
 {
 	if (TITLE_UPPER( tid ) != 0x10001 && TITLE_UPPER( tid ) != 0x10002 && TITLE_UPPER( tid ) != 0x10004) return false;
-	//gprintf("GetName( %016llx ): ", tid );
+	//debughelper_printf("GetName( %016llx ): ", tid );
 	char app[ISFS_MAXPATH] ATTRIBUTE_ALIGN(32);
 	IMET *imet = (IMET*) memalign(32, sizeof(IMET));
 
 	tmd* titleTmd = GetTMD(tid);
 	if (!titleTmd)
 	{
-		//gprintf("no TMD\n");
+		//debughelper_printf("no TMD\n");
 		free(imet);
 		return false;
 	}
@@ -129,14 +129,14 @@ bool NandTitle::GetName(u64 tid, int language, wchar_t* name)
 
 	snprintf(app, sizeof(app), "/title/%08x/%08x/content/%08x.app", TITLE_UPPER( tid ), TITLE_LOWER( tid ),
 			titleTmd->contents[i].cid);
-	//gprintf("%s\n", app );
+	//debughelper_printf("%s\n", app );
 
 	if (language > CONF_LANG_KOREAN) language = CONF_LANG_ENGLISH;
 
 	s32 fd = ISFS_Open(app, ISFS_OPEN_READ);
 	if (fd < 0)
 	{
-		//gprintf("fd: %d\n", fd );
+		//debughelper_printf("fd: %d\n", fd );
 		free(imet);
 		return false;
 	}
@@ -217,7 +217,7 @@ bool NandTitle::Exists(u64 tid)
 	s32 fd = ISFS_Open(app, ISFS_OPEN_READ);
 	if (fd >= 0) ISFS_Close(fd);
 
-	//gprintf(" fd: %d\n", fd );
+	//debughelper_printf(" fd: %d\n", fd );
 	return fd >= 0 || fd == -102; //102 means it exists, but we dont have permission to open it
 
 }
@@ -314,7 +314,7 @@ u32 NandTitle::SetType(u32 upper)
 u64 NandTitle::Next()
 {
 	u64 ret = 0;
-	//gprintf("Next( %08x, %u )\n", currentType, currentIndex );
+	//debughelper_printf("Next( %08x, %u )\n", currentType, currentIndex );
 	u32 i;
 	for (i = currentIndex; i < titleIds.size(); i++)
 	{
@@ -344,13 +344,13 @@ void NandTitle::ResetCounter()
 
 void NandTitle::AsciiTID(u64 tid, char* out)
 {
-	//gprintf("AsciiTID( %016llx ): ");
-	out[0] = ascii(TITLE_3( tid ));
-	out[1] = ascii(TITLE_2( tid ));
-	out[2] = ascii(TITLE_1( tid ));
-	out[3] = ascii((u8) (tid));
+	//debughelper_printf("AsciiTID( %016llx ): ");
+	out[0] = ASCII(TITLE_3( tid ));
+	out[1] = ASCII(TITLE_2( tid ));
+	out[2] = ASCII(TITLE_1( tid ));
+	out[3] = ASCII((u8) (tid));
 	out[4] = 0;
-	//gprintf("%s\n", out );
+	//debughelper_printf("%s\n", out );
 }
 
 void NandTitle::AsciiFromIndex(u32 i, char* out)
@@ -655,7 +655,7 @@ int NandTitle::InternalExtractDir(char *nandPath, std::string &filepath)
 
 			int res = ExtractFile(nandPath, filepathCpy.c_str());
 			if(res < 0) {
-				gprintf("ExtractFile: Error %i occured on file extract: %s\n", res, nandPath);
+				debughelper_printf("ExtractFile: Error %i occured on file extract: %s\n", res, nandPath);
 				ret = -2;
 			}
 		}
@@ -663,7 +663,7 @@ int NandTitle::InternalExtractDir(char *nandPath, std::string &filepath)
 		{
 			int res = InternalExtractDir(nandPath, filepath);
 			if(res < 0) {
-				gprintf("InternalExtractDir: Error %i occured in: %s\n", res, nandPath);
+				debughelper_printf("InternalExtractDir: Error %i occured in: %s\n", res, nandPath);
 				ret = -3;
 			}
 		}

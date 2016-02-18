@@ -1205,8 +1205,8 @@ bool CSettings::SetSetting(char *name, char *value)
 	else if (strcmp(name, "CustomBannersURL") == 0)
 	{
 		if( strcmp(value, "http://dl.dropbox.com/u/101209384/") == 0 ||
-			strcmp(value, "http://dl.dropboxusercontent.com/u/101209384/") == 0 ||
-			strcmp(value, "http://copy.com/vRN3HgFVyk9u7YuB/Public/") == 0)
+				strcmp(value, "http://dl.dropboxusercontent.com/u/101209384/") == 0 ||
+				strcmp(value, "http://copy.com/vRN3HgFVyk9u7YuB/Public/") == 0)
 			strlcpy(CustomBannersURL, "http://nintendont.gxarena.com/banners/", sizeof(CustomBannersURL)); // update banner URL
 		else
 			strlcpy(CustomBannersURL, value, sizeof(CustomBannersURL));
@@ -1283,11 +1283,29 @@ bool CSettings::FindConfig()
 	char CheckDevice[12];
 	char CheckPath[300];
 
-	// Enumerate the devices supported by libogc.
-	for (int i = SD; (i < MAXDEVICES) && !found; ++i)
-	{
-		snprintf(CheckDevice, sizeof(CheckDevice), "%s:", DeviceName[i]);
+	//check sd for config
+	if(DeviceHandler::Instance()->IsInsertedSD()){
+		snprintf(CheckDevice, sizeof(CheckDevice), "%s:", "sd");
 
+		// Check for the config file in the apps directory.
+		strlcpy(BootDevice, CheckDevice, sizeof(BootDevice));
+		snprintf(ConfigPath, sizeof(ConfigPath), "%s/apps/usbloader_gx/", BootDevice);
+		snprintf(CheckPath, sizeof(CheckPath), "%sGXGlobal.cfg", ConfigPath);
+		found = CheckFile(CheckPath);
+
+		if(!found)
+		{
+			// Check for the config file in the config directory.
+			strlcpy(BootDevice, CheckDevice, sizeof(BootDevice));
+			snprintf(ConfigPath, sizeof(ConfigPath), "%s/config/", BootDevice);
+			snprintf(CheckPath, sizeof(CheckPath), "%sGXGlobal.cfg", ConfigPath);
+			found = CheckFile(CheckPath);
+		}
+	}
+
+	// Enumerate the devices supported by libogc.
+	for(int i = 0; i < DeviceHandler::Instance()->GetTotalPartitionCount() && !found; i++){
+		snprintf(CheckDevice, sizeof(CheckDevice), "%s:", DeviceHandler::Instance()->GetPartitionPrefix(i));
 		if(!found)
 		{
 			// Check for the config file in the apps directory.
@@ -1306,14 +1324,14 @@ bool CSettings::FindConfig()
 		}
 	}
 
-	FILE * testFp = NULL;
-	//! No existing config so try to find a place where we can write it too
-	for (int i = SD; (i < MAXDEVICES) && !found; ++i)
-	{
-		sprintf(CheckDevice, "%s:", DeviceName[i]);
 
-		if (!found)
-		{
+	//! No existing config so try to find a place where we can write it too
+	if(!found){
+		FILE * testFp = NULL;
+
+		if(DeviceHandler::Instance()->IsInsertedSD()){
+			sprintf(CheckDevice, "%s:", "sd");
+
 			// Check if we can write to the apps directory.
 			strlcpy(BootDevice, CheckDevice, sizeof(BootDevice));
 			snprintf(ConfigPath, sizeof(ConfigPath), "%s/apps/usbloader_gx/", BootDevice);
@@ -1321,17 +1339,38 @@ bool CSettings::FindConfig()
 			testFp = fopen(CheckPath, "wb");
 			found = (testFp != NULL);
 			if(testFp) fclose(testFp);
+
+			if (!found) {
+				// Check if we can write to the config directory.
+				strlcpy(BootDevice, CheckDevice, sizeof(BootDevice));
+				snprintf(ConfigPath, sizeof(ConfigPath), "%s/config/", BootDevice);
+				CreateSubfolder(ConfigPath);
+				snprintf(CheckPath, sizeof(CheckPath), "%sGXGlobal.cfg", ConfigPath);
+				testFp = fopen(CheckPath, "wb");
+				found = (testFp != NULL);
+				if(testFp) fclose(testFp);
+			}
 		}
-		if (!found)
-		{
-			// Check if we can write to the config directory.
+
+		for(int i = 0; i < DeviceHandler::Instance()->GetTotalPartitionCount() && !found; i++){
+			snprintf(CheckDevice, sizeof(CheckDevice), "%s:", DeviceHandler::Instance()->GetPartitionPrefix(i));
+
+			// Check if we can write to the apps directory.
 			strlcpy(BootDevice, CheckDevice, sizeof(BootDevice));
-			snprintf(ConfigPath, sizeof(ConfigPath), "%s/config/", BootDevice);
-			CreateSubfolder(ConfigPath);
+			snprintf(ConfigPath, sizeof(ConfigPath), "%s/apps/usbloader_gx/", BootDevice);
 			snprintf(CheckPath, sizeof(CheckPath), "%sGXGlobal.cfg", ConfigPath);
 			testFp = fopen(CheckPath, "wb");
 			found = (testFp != NULL);
 			if(testFp) fclose(testFp);
+
+			if(!found)
+			{
+				// Check for the config file in the config directory.
+				strlcpy(BootDevice, CheckDevice, sizeof(BootDevice));
+				snprintf(ConfigPath, sizeof(ConfigPath), "%s/config/", BootDevice);
+				snprintf(CheckPath, sizeof(CheckPath), "%sGXGlobal.cfg", ConfigPath);
+				found = CheckFile(CheckPath);
+			}
 		}
 	}
 

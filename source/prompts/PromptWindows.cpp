@@ -40,7 +40,7 @@
 #include "audio.h"
 #include "language/UpdateLanguage.h"
 #include "system/IosLoader.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "lstub.h"
 
 static const char * DMLVersions[] =
@@ -160,7 +160,7 @@ int OnScreenNumpad(char * var, u32 maxlen)
 	mainWindow->Remove(&numpad);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
-	gprintf("\t%s", (save == 1 ? "saved" : "discarded"));
+	debughelper_printf("\t%s", (save == 1 ? "saved" : "discarded"));
 	return save;
 }
 
@@ -174,7 +174,7 @@ int OnScreenKeyboard(char * var, u32 maxlen, int min, bool hide)
 {
 	int save = -1;
 
-	gprintf("\nOnScreenKeyboard(%s, %i, %i) \n\tkeyset = %i", var, maxlen, min, Settings.keyset);
+	debughelper_printf("\nOnScreenKeyboard(%s, %i, %i) \n\tkeyset = %i", var, maxlen, min, Settings.keyset);
 
 	GuiKeyboard keyboard(var, maxlen, min, Settings.keyset);
 	keyboard.SetVisibleText(!hide);
@@ -233,7 +233,7 @@ int OnScreenKeyboard(char * var, u32 maxlen, int min, bool hide)
 	mainWindow->Remove(&keyboard);
 	mainWindow->SetState(STATE_DEFAULT);
 	ResumeGui();
-	gprintf("\t%s", (save ? "saved" : "discarded"));
+	debughelper_printf("\t%s", (save ? "saved" : "discarded"));
 	return save;
 }
 
@@ -243,7 +243,7 @@ int OnScreenKeyboard(char * var, u32 maxlen, int min, bool hide)
  ***************************************************************************/
 void WindowCredits()
 {
-	gprintf("WindowCredits()\n");
+	debughelper_printf("WindowCredits()\n");
 
 	int angle = 0;
 	GuiSound * creditsMusic = NULL;
@@ -587,7 +587,7 @@ void WindowCredits()
  ***************************************************************************/
 int WindowScreensaver()
 {
-	gprintf("WindowScreenSaver()\n");
+	debughelper_printf("WindowScreenSaver()\n");
 	bool exit = false;
 
 	/* initialize random seed: */
@@ -650,7 +650,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 {
 	int choice = -1;
 	int count = wait;
-	gprintf("WindowPrompt( %s, %s, %s, %s, %s, %s, %i ): ", title, msg, btn1Label, btn2Label, btn3Label, btn4Label, wait);
+	debughelper_printf("WindowPrompt( %s, %s, %s, %s, %s, %s, %i ): ", title, msg, btn1Label, btn2Label, btn3Label, btn4Label, wait);
 
 	PromptWindow *Window = new PromptWindow;
 	Window->SetTitle(title);
@@ -689,7 +689,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
 	delete Window;
 
 	mainWindow->SetState(STATE_DEFAULT);
-	gprintf(" %i\n", choice);
+	debughelper_printf(" %i\n", choice);
 
 	return choice;
 }
@@ -706,7 +706,7 @@ int WindowPrompt(const char *title, const char *msg, const char *btn1Label, cons
  ***************************************************************************/
 int WindowExitPrompt()
 {
-	gprintf("WindowExitPrompt()\n");
+	debughelper_printf("WindowExitPrompt()\n");
 
 	bgMusic->Pause();
 
@@ -1150,7 +1150,7 @@ int DiscWait(const char *title, const char *msg, const char *btn1Label, const ch
 		time_t timenow = starttime;
 		do
 		{
-			gprintf("%i\n", (int) (timenow-starttime));
+			debughelper_printf("%i\n", (int) (timenow-starttime));
 			ret = WBFS_Init(WBFS_DEVICE_USB);
 			if (ret >= 0) break;
 
@@ -1269,7 +1269,7 @@ int FormatingPartition(const char *title, int part_num)
  ***************************************************************************/
 bool NetworkInitPrompt()
 {
-	gprintf("\nNetworkinitPrompt()");
+	debughelper_printf("\nNetworkinitPrompt()");
 	if (IsNetworkInit()) return true;
 
 	bool success = true;

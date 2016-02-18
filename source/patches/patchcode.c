@@ -35,7 +35,7 @@
 #include "FileOperations/fileops.h"
 #include "memory/mem2.h"
 #include "memory/memory.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 static u8 *codelistend = (u8 *) 0x80003000;
 static u8 *codelist = (u8 *) 0x800022A8;
@@ -538,7 +538,7 @@ static void app_loadgameconfig()
 
 	if (code_size > (u32) codelistend - (u32) codelist)
 	{
-		gprintf("Ocarina: Too many codes found: filesize %i, maxsize: %i\n", code_size, (u32) codelistend - (u32) codelist);
+		debughelper_printf("Ocarina: Too many codes found: filesize %i, maxsize: %i\n", code_size, (u32) codelistend - (u32) codelist);
 		MEM2_free(code_buf);
 		code_buf = NULL;
 		code_size = 0;
@@ -662,7 +662,7 @@ void load_handler(u32 hooktype, u32 debugger, u32 pauseAtStart)
 		DCFlushRange(codelist, (u32) codelistend - (u32) codelist);
 		free(code_buf);
 		code_buf = NULL;
-		gprintf("Ocarina codes applied to %p size: %i\n", codelist, (u32) codelistend - (u32) codelist);
+		debughelper_printf("Ocarina codes applied to %p size: %i\n", codelist, (u32) codelistend - (u32) codelist);
 	}
 
 	if(hooktype != 0x00)
@@ -737,12 +737,12 @@ int ocarina_load_code(const char *CheatFilepath, u8 *gameid)
 	memcpy(id, gameid, 6);
 	snprintf(filepath, sizeof(filepath), "%s%s.gct", CheatFilepath, id);
 
-	gprintf("Ocarina: Searching codes...%s\n", filepath);
+	debughelper_printf("Ocarina: Searching codes...%s\n", filepath);
 
 	FILE * fp = fopen(filepath, "rb");
 	if (!fp)
 	{
-		gprintf("Ocarina: No codes found");
+		debughelper_printf("Ocarina: No codes found");
 		printf("\n");
 		return 0;
 	}
@@ -754,7 +754,7 @@ int ocarina_load_code(const char *CheatFilepath, u8 *gameid)
 	code_buf = (u8*) MEM2_alloc(filesize);
 	if (!code_buf)
 	{
-		gprintf("Ocarina: Not enough memory\n");
+		debughelper_printf("Ocarina: Not enough memory\n");
 		fclose(fp);
 		return 0;
 	}
@@ -765,14 +765,14 @@ int ocarina_load_code(const char *CheatFilepath, u8 *gameid)
 
 	if (code_size == 0)
 	{
-		gprintf("Ocarina: could not read file.\n");
+		debughelper_printf("Ocarina: could not read file.\n");
 		MEM2_free(code_buf);
 		code_buf = NULL;
 		code_size = 0;
 		return 0;
 	}
 
-	gprintf("Ocarina: Codes found.\n");
+	debughelper_printf("Ocarina: Codes found.\n");
 
 	//LoadGameConfig(CheatFilepath);
 

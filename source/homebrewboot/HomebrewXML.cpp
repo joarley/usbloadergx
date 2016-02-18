@@ -8,7 +8,6 @@
 #include <string.h>
 #include "FileOperations/fileops.h"
 #include "xml/tinyxml.h"
-#include "gecko.h"
 
 #include "HomebrewXML.h"
 

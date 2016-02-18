@@ -34,7 +34,7 @@
 #include "wad/nandtitle.h"
 #include "memory/memory.h"
 #include "utils/lz77.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #include "channels.h"
 
@@ -187,16 +187,16 @@ u8 * Channels::GetDol(const u64 &title, u8 *tmdBuffer)
 	if(bootcontent == 0xDEADBEAF)
 	{
 		bootcontent = tmd_file->contents[tmd_file->boot_index].cid;
-		if(!Settings.UseChanLauncher) gprintf("Main dol not found -> ");
-		gprintf("Loading boot content index\n");
+		if(!Settings.UseChanLauncher) debughelper_printf("Main dol not found -> ");
+		debughelper_printf("Loading boot content index\n");
 	}
 
 	snprintf(filepath, ISFS_MAXPATH, "/title/%08x/%08x/content/%08x.app", high, low, bootcontent);
-	gprintf("Loading Channel DOL: %s\n", filepath);
+	debughelper_printf("Loading Channel DOL: %s\n", filepath);
 
 	if (NandTitle::LoadFileFromNand(filepath, &buffer, &filesize) < 0)
 	{
-		gprintf("Failed loading DOL file\n");
+		debughelper_printf("Failed loading DOL file\n");
 		free(filepath);
 		return NULL;
 	}
@@ -209,7 +209,7 @@ u8 * Channels::GetDol(const u64 &title, u8 *tmdBuffer)
 		u32 size = 0;
 		if (decompressLZ77content(buffer, filesize, &decompressed, &size) < 0)
 		{
-			gprintf("Decompression failed\n");
+			debughelper_printf("Decompression failed\n");
 			free(buffer);
 			return NULL;
 		}
@@ -271,7 +271,7 @@ u8 *Channels::GetTMD(const u64 &tid, u32 *size, const char *prefix)
 
 	if (ret < 0)
 	{
-		gprintf("Reading TMD...Failed!\n");
+		debughelper_printf("Reading TMD...Failed!\n");
 		if(tmdBuffer)
 			free(tmdBuffer);
 		return NULL;
@@ -404,7 +404,7 @@ bool Channels::Identify(const u64 &titleid, u8 *tmdBuffer, u32 tmdSize)
 	if(!Identify_GenerateTik(&tikBuffer,&tikSize))
 	{
 		free(filepath);
-		gprintf("Generating fake ticket...Failed!");
+		debughelper_printf("Generating fake ticket...Failed!");
 		return false;
 	}
 
@@ -413,7 +413,7 @@ bool Channels::Identify(const u64 &titleid, u8 *tmdBuffer, u32 tmdSize)
 	u32 certSize = 0;
 	if (NandTitle::LoadFileFromNand(filepath, &certBuffer, &certSize) < 0)
 	{
-		gprintf("Reading certs...Failed!\n");
+		debughelper_printf("Reading certs...Failed!\n");
 		free(tikBuffer);
 		free(filepath);
 		return false;
@@ -424,19 +424,19 @@ bool Channels::Identify(const u64 &titleid, u8 *tmdBuffer, u32 tmdSize)
 		switch(ret)
 		{
 			case ES_EINVAL:
-				gprintf("Error! ES_Identify (ret = %d;) Data invalid!\n", ret);
+				debughelper_printf("Error! ES_Identify (ret = %d;) Data invalid!\n", ret);
 				break;
 			case ES_EALIGN:
-				gprintf("Error! ES_Identify (ret = %d;) Data not aligned!\n", ret);
+				debughelper_printf("Error! ES_Identify (ret = %d;) Data not aligned!\n", ret);
 				break;
 			case ES_ENOTINIT:
-				gprintf("Error! ES_Identify (ret = %d;) ES not initialized!\n", ret);
+				debughelper_printf("Error! ES_Identify (ret = %d;) ES not initialized!\n", ret);
 				break;
 			case ES_ENOMEM:
-				gprintf("Error! ES_Identify (ret = %d;) No memory!\n", ret);
+				debughelper_printf("Error! ES_Identify (ret = %d;) No memory!\n", ret);
 				break;
 			default:
-				gprintf("Error! ES_Identify (ret = %d)\n", ret);
+				debughelper_printf("Error! ES_Identify (ret = %d)\n", ret);
 				break;
 		}
 	}

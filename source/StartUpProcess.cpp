@@ -6,7 +6,7 @@
 #include "audio.h"
 #include "input.h"
 #include "themes/CTheme.h"
-#include "gecko.h"
+#include "debughelper/debughelper.h"
 #include "Controls/DeviceHandler.hpp"
 #include "wad/nandtitle.h"
 #include "SystemMenu/SystemMenuResources.h"
@@ -95,7 +95,7 @@ int StartUpProcess::ParseArguments(int argc, char *argv[])
 	{
 		if(!argv[i]) continue;
 
-		gprintf("Boot argument %i: %s\n", i+1, argv[i]);
+		debughelper_printf("Boot argument %i: %s\n", i+1, argv[i]);
 
 		char *ptr = strcasestr(argv[i], "-ios=");
 		if(ptr)
@@ -158,7 +158,7 @@ void StartUpProcess::SetTextf(const char * format, ...)
 	if((vasprintf(&tmp, format, va) >= 0) && tmp)
 	{
 		TextFade(-40);
-		gprintf(tmp);
+		debughelper_printf(tmp);
 		messageTxt->SetText(tmp);
 		TextFade(40);
 	}
@@ -284,20 +284,20 @@ int StartUpProcess::Execute()
 
 	SetTextf("Loading config files\n");
 
-	gprintf("\tLoading config...%s\n", Settings.Load() ? "done" : "failed");
-	gprintf("\tLoading language...%s\n", Settings.LoadLanguage(Settings.language_path, CONSOLE_DEFAULT) ? "done" : "failed");
-	gprintf("\tLoading game settings...%s\n", GameSettings.Load(Settings.ConfigPath) ? "done" : "failed");
-	gprintf("\tLoading game statistics...%s\n", GameStatistics.Load(Settings.ConfigPath) ? "done" : "failed");
-	gprintf("\tLoading game categories...%s\n", GameCategories.Load(Settings.ConfigPath) ? "done" : "failed");
+	debughelper_printf("\tLoading config...%s\n", Settings.Load() ? "done" : "failed");
+	debughelper_printf("\tLoading language...%s\n", Settings.LoadLanguage(Settings.language_path, CONSOLE_DEFAULT) ? "done" : "failed");
+	debughelper_printf("\tLoading game settings...%s\n", GameSettings.Load(Settings.ConfigPath) ? "done" : "failed");
+	debughelper_printf("\tLoading game statistics...%s\n", GameStatistics.Load(Settings.ConfigPath) ? "done" : "failed");
+	debughelper_printf("\tLoading game categories...%s\n", GameCategories.Load(Settings.ConfigPath) ? "done" : "failed");
 	if(Settings.CacheTitles)
-		gprintf("\tLoading cached titles...%s\n", GameTitles.ReadCachedTitles(Settings.titlestxt_path) ? "done" : "failed (using default)");
+		debughelper_printf("\tLoading cached titles...%s\n", GameTitles.ReadCachedTitles(Settings.titlestxt_path) ? "done" : "failed (using default)");
 
 	// enable isfs permission if using IOS+AHB or Hermes v4
 	if(IOS_GetVersion() < 200 || (IosLoader::IsHermesIOS() && IOS_GetRevision() == 4))
 	{
 		SetTextf("Patching %sIOS%d...\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
 		if (IosPatch_RUNTIME(true, false, false, false) == ERROR_PATCH)
-			gprintf("Patching %sIOS%d failed!\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
+			debughelper_printf("Patching %sIOS%d failed!\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
 		else
 			NandTitles.Get(); // get NAND channel's titles
 	}
@@ -319,8 +319,8 @@ int StartUpProcess::Execute()
 		Settings.GameWindowMode = GAMEWINDOW_DISC;
 	}
 
-	gprintf("\tLoading font...%s\n", Theme::LoadFont(Settings.ConfigPath) ? "done" : "failed (using default)");
-	gprintf("\tLoading theme...%s\n", Theme::Load(Settings.theme) ? "done" : "failed (using default)");
+	debughelper_printf("\tLoading font...%s\n", Theme::LoadFont(Settings.ConfigPath) ? "done" : "failed (using default)");
+	debughelper_printf("\tLoading theme...%s\n", Theme::Load(Settings.theme) ? "done" : "failed (using default)");
 
 	//! Init the rest of the System
 	Sys_Init();
