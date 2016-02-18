@@ -26,7 +26,9 @@
 #include "usbloader/usb_new.h"
 #include "sdcard/wiisd_io.h"
 #include "DeviceHandler.hpp"
+#include "../usbloader/wbfs.h"
 #include <cstdlib>
+#include <string.h>
 
 DeviceHandler * DeviceHandler::instance = NULL;
 
@@ -45,9 +47,9 @@ void DeviceHandler::DestroyInstance() {
 }
 
 DeviceHandler::DeviceHandler() {
-	usbstorage_init() ;
+	usbstorage_init();
 	sdHandle = NULL;
-	memset(usbHandles, NULL, sizeof(PartitionHandle *) * MAX_USB_STORAGE_DEVICES);
+	memset(usbHandles, 0, sizeof(PartitionHandle *) * MAX_USB_STORAGE_DEVICES);
 }
 
 DeviceHandler::~DeviceHandler() {
@@ -58,6 +60,7 @@ DeviceHandler::~DeviceHandler() {
 bool DeviceHandler::MountAll() {
 	MountSD();
 	MountAllUSB();
+	return true;
 }
 
 void DeviceHandler::UnMountAll() {
@@ -73,7 +76,7 @@ bool DeviceHandler::MountSD() {
 	if(!__io_wiisd.isInserted())
 		return false;
 
-	PartitionHandle* sd = new PartitionHandle(__io_wiisd);
+	PartitionHandle* sd = new PartitionHandle(&__io_wiisd);
 	if(sd->GetPartitionCount() < 1)
 	{
 		delete sd;
@@ -84,26 +87,26 @@ bool DeviceHandler::MountSD() {
 	return true;
 }
 
-bool DeviceHandler::MountUSB(int port) {
+int DeviceHandler::MountUSB(int port) {
 	if(port > MAX_USB_STORAGE_DEVICES)
-		return false;
+		return -1;
 	if(usbHandles[port] != NULL)
-		return true;
-	if(usbstorage_get_num_devices() < port)
-		return false;
-	DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
+		return -2;
+	if(usbstorage_get_num_devices() <= port)
+		return -3;
+	const DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
 
 	if(!interface->startup())
-		return false;
+		return -4;
 	if(!interface->isInserted())
-		return false;
+		return -5;
 
 	PartitionHandle* usb = new PartitionHandle(interface);
 	int devPartCount = usb->GetPartitionCount();
 	if(devPartCount < 1)
 	{
 		delete usb;
-		return false;
+		return -6;
 	}
 
 	char name[5];
@@ -115,15 +118,15 @@ bool DeviceHandler::MountUSB(int port) {
 
 	usbHandles[port] = usb;
 
-	return true;
+	return 1;
 }
 
-bool DeviceHandler::MountAllUSB() {
+int DeviceHandler::MountAllUSB() {
 	int count = 0;
 	for(int port = 0; port < MAX_USB_STORAGE_DEVICES;port++)
 		if(MountUSB(port))
 			count++;
-	return count > 0;
+	return count;
 }
 
 bool DeviceHandler::IsInsertedSD() {
@@ -137,7 +140,7 @@ bool DeviceHandler::IsInsertedUSB(int port) {
 		return false;
 	if(usbstorage_get_num_devices() < port)
 		return false;
-	DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
+	const DISC_INTERFACE* interface = usbstorage_get_disc_interface(port);
 
 	if(!interface->startup())
 		return false;
@@ -173,8 +176,8 @@ PartitionHandle* DeviceHandler::GetHandleUSB(int port) const {
 	return usbHandles[port];
 }
 
-PartitionHandle* DeviceHandler::GetHandleFromPartition(int part) const {
-	if(part == SDPartitionNumber)
+PartitionHandle* DeviceHandler::GetHandleFromPartition(int part) {
+	if(part == SD_PARTITION_NUMBER)
 		return sdHandle;
 	int port = PartitionToPortUSB(part);
 	if(port == -1)
@@ -211,22 +214,22 @@ int DeviceHandler::GetFilesystemType(int part) {
 
 int DeviceHandler::GetPartitionNumber(const char* path) {
 	if(strncmp(path, "sd", 2) == 0)
-		return SDPartitionNumber;
+		return SD_PARTITION_NUMBER;
 
 	if(strncmp(path, "usb", 3))
 	{	if(isdigit(path[4]))
-			return (path[3] - '0' * 10) + (path[4] - '0');
-		else
-			return path[3] - '0';
+		return (path[3] - '0' * 10) + (path[4] - '0');
+	else
+		return path[3] - '0';
 	}
 	return -1;
 }
 
 const char* DeviceHandler::GetFSName(int part) {
-	if(part == SDPartitionNumber)
+	if(part == SD_PARTITION_NUMBER)
 		return sdHandle->GetFSName(0);
 
-	char name[10];
+	static char name[10];
 	int portUSB = PartitionToPortUSB(part);
 	if(portUSB >= 0)
 		return "";
@@ -247,7 +250,7 @@ const char* DeviceHandler::GetFSName(const char* path) {
 }
 
 const char* DeviceHandler::GetPartitionPrefix(const char* path) {
-	char ret[10] = "";
+	static char ret[10] = "";
 	if(strncmp(path, "sd", 2) == 0)
 		return "sd";
 	if(strncmp(path, "usb", 3))
@@ -288,10 +291,13 @@ u16 DeviceHandler::GetTotalPartitionCount() {
 }
 
 bool DeviceHandler::IsSDPartition(int part) {
-	return part == SDPartitionNumber;
+	return part == SD_PARTITION_NUMBER;
 }
 
 const char* DeviceHandler::GetPartitionPrefix(int partition) {
-	char name[10];
+	if(partition == SD_PARTITION_NUMBER)
+		return "sd";
+	static char name[10];
 	sprintf(name, "%s%d","usb", partition);
+	return name;
 }

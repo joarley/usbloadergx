@@ -438,8 +438,8 @@ void PartitionHandle::AddPartition(const char * name, u64 lba_start, u64 sec_cou
 }
 
 int PartitionHandle::GetPartitionPos(const char* name) {
-	for(int i = 0; i < MountNameList.size();i++)
-		if(MountNameList == name)
+	for(u32 i = 0; i < MountNameList.size();i++)
+		if(MountNameList[i] == name)
 			return i;
 	return -1;
 }

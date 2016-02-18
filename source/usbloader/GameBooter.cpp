@@ -982,10 +982,8 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		}
 
 		// Check if the partition is a primary
-		bool found = false;
 		int USB_partNum = DeviceHandler::Instance()->GetPartitionNumber(Settings.GameCubePath);
 		const char* prefix = DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath);
-		int usbport = DeviceHandler::Instance()->PartitionToPortUSB(USB_partNum);
 		PartitionHandle * usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(USB_partNum);
 		int partition = usbHandle->GetPartitionPos(prefix);
 		if(usbHandle->GetPartitionTableType(partition) != MBR && partition == 0)

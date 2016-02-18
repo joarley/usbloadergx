@@ -17,6 +17,7 @@
 #include <wiiuse/wpad.h>
 #include <di/di.h>
 #include <sys/iosupport.h>
+#include <debug.h>
 
 #include "video.h"
 #include "menu/menus.h"
@@ -50,6 +51,7 @@ int main(int argc, char *argv[])
 		USBGeckoOutput();
 	} else if(wifi_debug_init()) {
 		wifi_debug_redirect_output();
+		_break();
 	}
 
 	NandTitles.Get();

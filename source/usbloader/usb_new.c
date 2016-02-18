@@ -7,7 +7,6 @@ static bool devices_initialized[MAX_USB_STORAGE_DEVICES];
 static usb_device_entry devices[MAX_USB_STORAGE_DEVICES];
 static usbstorage_handle handles[MAX_USB_STORAGE_DEVICES];
 static u32 hdd_sector_size[MAX_USB_STORAGE_DEVICES];
-static DISC_INTERFACE* interfaces[MAX_USB_STORAGE_DEVICES];
 static u8 num_devices = 0;
 static bool started = false;
 
@@ -59,26 +58,25 @@ u32 usbstorage_get_sector_size(int port){
 	return hdd_sector_size[port];
 }
 
-DISC_INTERFACE* usbstorage_get_disc_interface(int port) {
-	return interfaces[port];
-}
+int usbstorage_startup(int port) {
+	if(devices_initialized[port])
+		return 1;
 
-bool usbstorage_startup(int port) {
 	if(!started){
 		if(!usbstorage_init())
-			return false;
+			return -1;
 		if(num_devices <= port)
-			return false;
+			return -2;
 	}
 
 	if(USBStorage_Open(&handles[port], devices[port].device_id, devices[port].vid, devices[port].pid) != USB_OK)
-		return false;
+		return -3;
 
 	u32 sector_num = 0;
 	USBStorage_ReadCapacity(&handles[port], 0, &hdd_sector_size[port], &sector_num);
 
 	devices_initialized[port] = true;
-	return true;
+	return 1;
 }
 
 u32 usbstorage_get_capacity(int port) {
@@ -99,10 +97,10 @@ bool usbstorage_is_inserted(int port) {
 	return usbstorage_get_capacity(port) > 0;
 }
 
-bool usbstorage_read_sectors(int port, u32 sector, u32 numSectors, void *buffer) {
+int usbstorage_read_sectors(int port, u32 sector, u32 numSectors, void *buffer) {
 	if(!devices_initialized[port])
-		return false;
-
+		return -100;
+	return USBStorage_Read(&handles[port], 0, sector, numSectors, buffer);
 	if(USBStorage_Read(&handles[port], 0, sector, numSectors, buffer) != USB_OK)
 		return false;
 	return true;
@@ -131,10 +129,10 @@ bool usbstorage_clear_status(int port)
 }
 
 #define DECLARE_PORT(PORT) \
-	bool __usbstorage_Startup##PORT(){return usbstorage_startup(PORT);}\
+	bool __usbstorage_Startup##PORT(){return usbstorage_startup(PORT) == 1;}\
 	bool __usbstorage_IsInserted##PORT(){return usbstorage_is_inserted(PORT);}\
 	bool __usbstorage_ReadSectors##PORT(u32 sector, u32 numSectors, void *buffer){\
-		return usbstorage_read_sectors(PORT, sector, numSectors, buffer);}\
+		return usbstorage_read_sectors(PORT, sector, numSectors, buffer) == 0;}\
 	bool __usbstorage_WriteSectors##PORT(u32 sector, u32 numSectors, const void *buffer){\
 		return usbstorage_write_sectors(PORT, sector, numSectors, buffer);}\
 	bool __usbstorage_ClearStatus##PORT(){return usbstorage_clear_status(PORT);}\
@@ -146,8 +144,7 @@ bool usbstorage_clear_status(int port)
 		(FN_MEDIUM_READSECTORS) &__usbstorage_ReadSectors##PORT,\
 		(FN_MEDIUM_WRITESECTORS) &__usbstorage_WriteSectors##PORT,\
 		(FN_MEDIUM_CLEARSTATUS) &__usbstorage_ClearStatus##PORT,\
-		(FN_MEDIUM_SHUTDOWN) &__usbstorage_Shutdown##PORT};\
-	interfaces[PORT] = &__io_usbstorage2_port##PORT;
+		(FN_MEDIUM_SHUTDOWN) &__usbstorage_Shutdown##PORT};
 
 DECLARE_PORT(0);
 DECLARE_PORT(1);
@@ -165,3 +162,15 @@ DECLARE_PORT(12);
 DECLARE_PORT(13);
 DECLARE_PORT(14);
 DECLARE_PORT(15);
+
+static const DISC_INTERFACE* interfaces[MAX_USB_STORAGE_DEVICES] = {
+		&__io_usbstorage2_port0, &__io_usbstorage2_port1, &__io_usbstorage2_port2, &__io_usbstorage2_port3,
+		&__io_usbstorage2_port4, &__io_usbstorage2_port5, &__io_usbstorage2_port6, &__io_usbstorage2_port7,
+		&__io_usbstorage2_port8, &__io_usbstorage2_port9, &__io_usbstorage2_port10, &__io_usbstorage2_port11,
+		&__io_usbstorage2_port12, &__io_usbstorage2_port13, &__io_usbstorage2_port14, &__io_usbstorage2_port15};
+
+const DISC_INTERFACE* usbstorage_get_disc_interface(int port) {
+	return interfaces[port];
+}
+
+

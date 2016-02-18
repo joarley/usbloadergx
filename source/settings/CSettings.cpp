@@ -1281,12 +1281,17 @@ bool CSettings::FindConfig()
 {
 	bool found = false;
 	char CheckDevice[12];
-	char CheckPath[300];
+	char CheckPath[300] = "sd:";
+
+	strlcpy(BootDevice, CheckDevice, sizeof(BootDevice));
+	snprintf(ConfigPath, sizeof(ConfigPath), "%s/apps/usbloader_gx/", BootDevice);
+	snprintf(CheckPath, sizeof(CheckPath), "%sGXGlobal.cfg", ConfigPath);
+	found = CheckFile(CheckPath);
 
 	// Enumerate the devices supported by libogc.
-	for (int i = SD; (i < MAXDEVICES) && !found; ++i)
+	for (int i = 0; (i < DeviceHandler::Instance()->GetTotalPartitionCount()) && !found; ++i)
 	{
-		snprintf(CheckDevice, sizeof(CheckDevice), "%s:", DeviceName[i]);
+		snprintf(CheckDevice, sizeof(CheckDevice), "%s:", DeviceHandler::Instance()->GetPartitionPrefix(i));
 
 		if(!found)
 		{
@@ -1308,9 +1313,9 @@ bool CSettings::FindConfig()
 
 	FILE * testFp = NULL;
 	//! No existing config so try to find a place where we can write it too
-	for (int i = SD; (i < MAXDEVICES) && !found; ++i)
+	for (int i = 0; (i < DeviceHandler::Instance()->GetTotalPartitionCount()) && !found; ++i)
 	{
-		sprintf(CheckDevice, "%s:", DeviceName[i]);
+		sprintf(CheckDevice, "%s:", DeviceHandler::Instance()->GetPartitionPrefix(i));
 
 		if (!found)
 		{

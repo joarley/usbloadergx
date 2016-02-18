@@ -29,6 +29,7 @@
 #include "themes/gettheme.h"
 #include "themes/Resources.h"
 #include "menu/menus.h"
+#include "gecko.h"
 
 CategoryPrompt::CategoryPrompt(const string &title)
 	: GuiWindow(0, 0)

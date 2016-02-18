@@ -4,7 +4,7 @@
 #include "PartitionHandle.h"
 #include "usbloader/usb_new.h"
 
-#define SDPartitionNumber 99999
+#define SD_PARTITION_NUMBER 99999
 
 class DeviceHandler
 {
@@ -16,8 +16,8 @@ class DeviceHandler
 		void UnMountAll();
 
 		bool MountSD();
-		bool MountUSB(int port);
-		bool MountAllUSB();
+		int MountUSB(int port);
+		int MountAllUSB();
 
 		bool IsInsertedSD();
 		bool IsInsertedUSB(int port);
@@ -28,7 +28,7 @@ class DeviceHandler
 
 		PartitionHandle * GetHandleSD() const;
 		PartitionHandle * GetHandleUSB(int port) const;
-		PartitionHandle * GetHandleFromPartition(int part) const;
+		PartitionHandle * GetHandleFromPartition(int part);
 		const DISC_INTERFACE *GetInterfaceUSB(int port);
 		int GetFilesystemType(int part);
 		const char * GetFSName(int part);

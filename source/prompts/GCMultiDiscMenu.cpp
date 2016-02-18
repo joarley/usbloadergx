@@ -23,6 +23,7 @@
 #include "themes/gettheme.h"
 #include "themes/Resources.h"
 #include "menu/menus.h"
+#include "gecko.h"
 
 GCMultiDiscMenu::GCMultiDiscMenu(const std::vector<struct discHdr> &List)
 	: gcGameList(List)

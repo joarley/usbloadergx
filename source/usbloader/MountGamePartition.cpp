@@ -12,6 +12,7 @@
 #include "settings/GameTitles.h"
 #include "xml/GameTDB.hpp"
 #include "utils/ShowError.h"
+#include "gecko.h"
 
 static int FindGamePartition()
 {

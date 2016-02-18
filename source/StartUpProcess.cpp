@@ -196,13 +196,17 @@ bool StartUpProcess::USBSpinUp()
 		sleep(2);
 
 		for(int i = 0; i < numDevices; i++){
-			bool portStarted = (DeviceHandler::Instance()->GetInterfaceUSB(i)->startup()
-					&& DeviceHandler::Instance()->GetInterfaceUSB(i)->isInserted());
-			messageTxt->SetTextf("Porta %d não iniciada %d", i, portStarted);
+			bool portStarted1 = DeviceHandler::Instance()->GetInterfaceUSB(i)->startup();
+			bool portStarted2 = DeviceHandler::Instance()->GetInterfaceUSB(i)->isInserted();
+			messageTxt->SetTextf("Porta %d não iniciada %d %d", i, portStarted1, portStarted2);
+			Draw();
 			sleep(1);
-			if(portStarted)
+			if(portStarted1 && portStarted2)
 				started = true;
 		}
+
+		if(started)
+			break;
 
 		UpdatePads();
 		for(int i = 0; i < 4; ++i)
@@ -278,8 +282,35 @@ int StartUpProcess::Execute()
 	if(Settings.USBAutoMount == ON)
 	{
 		SetTextf("Initialize usb device\n");
-		DeviceHandler::Instance()->MountAllUSB();
 		USBSpinUp();
+		int count = DeviceHandler::Instance()->MountUSB(0);
+		SetTextf("Montado %d devices USB\n", count, usbstorage_get_num_devices());
+		Draw();
+		sleep(3);
+		MASTER_BOOT_RECORD *mbr = (MASTER_BOOT_RECORD *) malloc(MAX_BYTES_PER_SECTOR);
+		int rr = usbstorage_startup(0);
+		if (rr < 0)
+		{
+			SetTextf("Error ao iniciar startup %d\n", rr);
+			Draw();
+			sleep(5);
+		}
+		rr = usbstorage_read_sectors(0, 0, 1, mbr);
+		if (rr < 0)
+		{
+			free(mbr);
+			SetTextf("Error ao ler mbr %d\n", rr);
+		}else{
+			SetTextf("MBR-->%d\n", mbr->signature);
+			free(mbr);
+		}
+
+		Draw();
+		sleep(5);
+		count = DeviceHandler::Instance()->GetTotalPartitionCount();
+		SetTextf("Total de %d partições\n", count);
+		Draw();
+		sleep(3);
 	}
 
 	SetTextf("Loading config files\n");
