@@ -103,14 +103,13 @@ namespace DebugOutput
                             }
                             else if (piece == "END")
                             {
-                                state = ParseState.NotInitilized;
-
                                 if (state == ParseState.MessageFound)
                                 {
                                     workingPieces.Add(piece);
                                     ProcessMessage(workingPieces.ToArray());
                                 }
 
+                                state = ParseState.NotInitilized;
                                 workingPieces.Clear();
                             }
                             else if (state == ParseState.Initialized)
