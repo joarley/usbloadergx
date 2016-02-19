@@ -23,6 +23,10 @@
  *
  * for WiiXplorer 2010
  ***************************************************************************/
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+
 #include "usbloader/usb_new.h"
 #include "sdcard/wiisd_io.h"
 #include "DeviceHandler.hpp"

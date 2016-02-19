@@ -6,8 +6,9 @@ extern "C"
 {
 #endif
 
-bool wifi_debug_init();
-void wifi_debug_redirect_output();
+void printf_wifidebug(const char *format, ...);
+bool init_wifidebug(bool waitgdb);
+void redirect_output_wifidebug();
 
 #ifdef __cplusplus
 }

@@ -26,6 +26,7 @@ distribution.
 #include <math.h>
 #include "Layout.h"
 #include "Material.h"
+#include "../debughelper/debughelper.h"
 
 Material::Material()
 	: flags(0)
@@ -469,7 +470,7 @@ inline void Material::ApplyTextures(const BannerResources& resources) const
 			// find texture from palette
 			if(palette_texture[i] >= resources.palettes[resources.cur_set].size())
 			{
-				gprintf( "palette index is out of range %i\n", palette_texture[i]);
+				debughelper_printf( "palette index is out of range %i\n", palette_texture[i]);
 				return;
 			}
 			for(u32 n = 0; n < resources.textures.size(); n++)

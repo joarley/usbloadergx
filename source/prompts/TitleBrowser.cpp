@@ -22,7 +22,7 @@
 #include "audio.h"
 #include "xml/GameTDB.hpp"
 #include "wad/nandtitle.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #include "Controls/DeviceHandler.hpp"
 #include "usbloader/NandEmu.h"
@@ -34,7 +34,7 @@ extern u8 reset;
  *********************************************************************************/
 bool TitleSelector(char output[])
 {
-	gprintf("TitleSelector()\n");
+	debughelper_printf("TitleSelector()\n");
 
 	s32 num_titles;
 	s32 r = -1;
@@ -64,7 +64,7 @@ bool TitleSelector(char output[])
 	titleList = (u64*) memalign(32, num_titles * sizeof(u64));
 	if (!titleList)
 	{
-		gprintf("TitleLister(): out of memory!\n");
+		debughelper_printf("TitleLister(): out of memory!\n");
 		return false;
 	}
 	OptionList options4;
@@ -83,7 +83,7 @@ bool TitleSelector(char output[])
 		u64 tid = NandTitles.Next();
 		if (!tid)
 		{
-			gprintf("shit happened\n");
+			debughelper_printf("shit happened\n");
 			break;
 		}
 
@@ -100,7 +100,7 @@ bool TitleSelector(char output[])
 			name = TitleName.c_str();
 		else
 			name = NandTitles.NameOf(tid);
-		//gprintf("%016llx: %s: %s\n%p\t%p\n", tid, id, name, &id, name );
+		//debughelper_printf("%016llx: %s: %s\n%p\t%p\n", tid, id, name, &id, name );
 
 		options4.SetName(i, "%s", id);
 		options4.SetValue(i, "%s", name ? name : tr( "Unknown" ));
@@ -246,7 +246,7 @@ int TitleBrowser()
 	titleList = (u64*) memalign(32, (num_titles + num_sys_titles) * sizeof(u64));
 	if (!titleList)
 	{
-		gprintf("TitleBrowser(): out of memory!\n");
+		debughelper_printf("TitleBrowser(): out of memory!\n");
 		return -1;
 	}
 	OptionList options3;
@@ -266,10 +266,10 @@ int TitleBrowser()
 		u64 tid = NandTitles.Next();
 		if (!tid)
 		{
-			gprintf("shit happened3\n");
+			debughelper_printf("shit happened3\n");
 			break;
 		}
-		gprintf("[ %u ] tid: %016llx\t%s\n", i, tid, NandTitles.NameOf(tid));
+		debughelper_printf("[ %u ] tid: %016llx\t%s\n", i, tid, NandTitles.NameOf(tid));
 
 		if (!NandTitles.Exists(tid))
 		{

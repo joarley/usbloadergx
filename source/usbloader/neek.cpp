@@ -26,7 +26,7 @@
 #include "FileOperations/fileops.h"
 #include "settings/CSettings.h"
 #include "sys.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 typedef struct {
 	u32 hdrsize;
@@ -47,7 +47,7 @@ static inline void disable_memory_protection(void) {
 
 bool neekLoadKernel (const char* nandpath)
 {
-	gprintf( "NEEK: Loading Kernel.bin... ");
+	debughelper_printf( "NEEK: Loading Kernel.bin... ");
 	char kernelPath[30];
 	if(isWiiU())
 		snprintf(kernelPath, sizeof(kernelPath), "%s:/sneek/vwiikernel.bin", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
@@ -55,7 +55,7 @@ bool neekLoadKernel (const char* nandpath)
 		snprintf(kernelPath, sizeof(kernelPath), "%s:/sneek/kernel.bin", DeviceHandler::Instance()->GetPartitionPrefix(nandpath));
 	if(!CheckFile(kernelPath))
 	{
-		gprintf("File not found.\n");
+		debughelper_printf("File not found.\n");
 		return false;
 	}
 	
@@ -63,7 +63,7 @@ bool neekLoadKernel (const char* nandpath)
 	f = fopen(kernelPath, "rb");
 	if(!f)
 	{
-		gprintf("Failed loading file %s.\n", kernelPath);
+		debughelper_printf("Failed loading file %s.\n", kernelPath);
 		return false;
 	}
 	
@@ -82,8 +82,8 @@ bool neekLoadKernel (const char* nandpath)
 	//((ioshdr*)kernel)->argument = 0x42; // set argument size
 	DCFlushRange(kernel, fsize);
 	
-	gprintf("Loaded to 0x%08x, size: %d\n", kernel, fsize);
-	gprintf("NEEK: offset memory address: %08x\n", (u32)kernel - 0x80000000);	// offset
+	debughelper_printf("Loaded to 0x%08x, size: %d\n", kernel, fsize);
+	debughelper_printf("NEEK: offset memory address: %08x\n", (u32)kernel - 0x80000000);	// offset
 	
 	fclose(f);
 	return true;
@@ -100,10 +100,10 @@ static void neekClearKernel(void)
 
 int neekBoot(void)
 {
-	gprintf("Booting S/Uneek !!\n");
+	debughelper_printf("Booting S/Uneek !!\n");
 	if(kernel == NULL)
 	{
-		gprintf("Kernel not loaded !! Exiting...\n");
+		debughelper_printf("Kernel not loaded !! Exiting...\n");
 		return -1;
 	}
 	
@@ -121,7 +121,7 @@ int neekBoot(void)
 	
 	if(i >= 0x939FE000)
 	{
-		gprintf("ES_ImportBoot2 not patched !! Exiting...\n");
+		debughelper_printf("ES_ImportBoot2 not patched !! Exiting...\n");
 		//SYS_ResetSystem( SYS_RETURNTOMENU, 0, 0 );
 		return -1;
 	}
@@ -327,7 +327,7 @@ int neek2oSetNAND(const char* nandpath)
 	//	snprintf(nandconfigPath, sizeof(nandconfigPath), "%s:/sneek/vwiincfg.bin", DeviceHandler::GetDevicePrefix(nandpath));
 
 #ifdef DEBUG
-	gprintf("nandconfigPath : %s\n", nandconfigPath);
+	debughelper_printf("nandconfigPath : %s\n", nandconfigPath);
 #endif
 
 	// create the file if it doesn't exist
@@ -339,7 +339,7 @@ int neek2oSetNAND(const char* nandpath)
 		f = fopen(nandconfigPath, "wb");
 		if(!f)
 		{
-			gprintf("Failed creating file %s.\n", nandconfigPath);
+			debughelper_printf("Failed creating file %s.\n", nandconfigPath);
 			return -1;
 		}
 		
@@ -351,7 +351,7 @@ int neek2oSetNAND(const char* nandpath)
 	f = fopen(nandconfigPath, "rb");
 	if(!f)
 	{
-		gprintf("Failed loading file %s.\n", nandconfigPath);
+		debughelper_printf("Failed loading file %s.\n", nandconfigPath);
 		return -1;
 	}
 	
@@ -371,7 +371,7 @@ int neek2oSetNAND(const char* nandpath)
 	ret = fread (nandCfg, 1, filesize, f);
 	if(ret != filesize)
 	{
-		gprintf("Failed loading file %s to Mem.\n", nandconfigPath);
+		debughelper_printf("Failed loading file %s to Mem.\n", nandconfigPath);
 		fclose (f);
 		MEM2_free(nandCfg);
 		return -1;
@@ -392,11 +392,11 @@ int neek2oSetNAND(const char* nandpath)
 
 #ifdef DEBUG
 	// List found nands from the file
-	gprintf("NandCnt = %d\n", nandCfg->NandCnt);
-	gprintf("NandSel = %d\n", nandCfg->NandSel);
+	debughelper_printf("NandCnt = %d\n", nandCfg->NandCnt);
+	debughelper_printf("NandSel = %d\n", nandCfg->NandSel);
 	for( i = 0 ; i < nandCfg->NandCnt ; i++)
 	{
-		gprintf("Path %d = %s %s\n", i, &nandCfg->Nands[i], strcmp((const char *)&nandCfg->Nands[i], neekNandPath) == 0 ? "found" : "");
+		debughelper_printf("Path %d = %s %s\n", i, &nandCfg->Nands[i], strcmp((const char *)&nandCfg->Nands[i], neekNandPath) == 0 ? "found" : "");
 	}
 #endif
 
@@ -418,7 +418,7 @@ int neek2oSetNAND(const char* nandpath)
 			nandCfg->Padding1 = i; // same value?
 			DCFlushRange(nandCfg, NANDCONFIG_HEADER_SIZE);
 #ifdef DEBUG
-			gprintf("new nandCfg->sel = %d", nandCfg->NandSel);
+			debughelper_printf("new nandCfg->sel = %d", nandCfg->NandSel);
 			hexdump(nandCfg, NANDCONFIG_HEADER_SIZE);
 #endif
 			freopen(nandconfigPath, "wb", f);
@@ -436,7 +436,7 @@ int neek2oSetNAND(const char* nandpath)
 			snprintf(newNand->DiPath, sizeof(newNand->DiPath), "/sneek");
 			DCFlushRange(newNand, sizeof(NandInfo));
 #ifdef DEBUG
-			gprintf("new nandCfg");
+			debughelper_printf("new nandCfg");
 			hexdump(newNand, sizeof(NandInfo));
 #endif
 			nandCfg->NandCnt++;
@@ -453,7 +453,7 @@ int neek2oSetNAND(const char* nandpath)
 			ret = fwrite(nandCfg, sizeof(char), filesize, f); 	// Write full file
 			ret = fwrite(newNand,1,sizeof(NandInfo),f); 		// append new NANDInfo
 			if(ret != sizeof(NandInfo))
-				gprintf("Writing new NAND info failed\n");
+				debughelper_printf("Writing new NAND info failed\n");
 			
 			MEM2_free(newNand);
 		}
@@ -464,7 +464,7 @@ int neek2oSetNAND(const char* nandpath)
 	ret = fread (nandCfg, 1, NANDCONFIG_HEADER_SIZE, f);
 	if(ret != NANDCONFIG_HEADER_SIZE)
 	{
-		gprintf("Failed loading file %s to Mem.\n", nandconfigPath);
+		debughelper_printf("Failed loading file %s to Mem.\n", nandconfigPath);
 		fclose (f);
 		MEM2_free(nandCfg);
 		return -1;
@@ -473,7 +473,7 @@ int neek2oSetNAND(const char* nandpath)
 	fclose (f);
 	MEM2_free(nandCfg);
 #ifdef DEBUG
-	gprintf("verify header:\n");
+	debughelper_printf("verify header:\n");
 		hexdump(nandCfg, NANDCONFIG_HEADER_SIZE);
 #endif
 	if(ret == i)

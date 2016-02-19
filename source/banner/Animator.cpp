@@ -25,6 +25,7 @@ distribution.
 #include <math.h>
 #include "Animator.h"
 #include "Layout.h"
+#include "../debughelper/debughelper.h"
 
 // load keyframes from a brlan file
 u32 Animator::LoadAnimators(const RLAN_Header *header, Layout& layout, u8 key_set)
@@ -73,7 +74,7 @@ u32 Animator::LoadAnimators(const RLAN_Header *header, Layout& layout, u8 key_se
 		}
 		else
 		{
-			gprintf("Unknown: %c%c%c%c\n", position[0], position[1], position[2], position[3]);
+			debughelper_printf("Unknown: %c%c%c%c\n", position[0], position[1], position[2], position[3]);
 		}
 	}
 
@@ -246,7 +247,7 @@ void Animator::ProcessHermiteKey(const KeyType& type, float value)
 //	<< " target: " << (int)type.target
 //	<< " value: " << value
 //	<< '\n';
-	gprintf("Animator::ProcessHermiteKey\n");
+	debughelper_printf("Animator::ProcessHermiteKey\n");
 }
 
 void Animator::ProcessStepKey(const KeyType& type, StepKeyHandler::KeyData data)
@@ -256,5 +257,5 @@ void Animator::ProcessStepKey(const KeyType& type, StepKeyHandler::KeyData data)
 //	<< " target: " << (int)type.target
 //	<< " data:" << (int)data.data1 << " " << (int)data.data2
 //	<< '\n';
-	gprintf("Animator::ProcessStepKey\n");
+	debughelper_printf("Animator::ProcessStepKey\n");
 }

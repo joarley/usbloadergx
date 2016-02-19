@@ -27,7 +27,6 @@
 #include "network/networkops.h"
 #include "utils/StringTools.h"
 #include "xml/tinyxml.h"
-#include "gecko.h"
 
 Wiinnertag::Wiinnertag(const string &filepath)
 {

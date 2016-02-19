@@ -14,7 +14,7 @@
 
 #include "usbloader/GameList.h"
 #include "menu/menus.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #define VALID(x) (x >= 0 && x < (int) WbfsList.size() && WbfsList[x] != NULL)
 
@@ -89,7 +89,7 @@ s32 WBFS_OpenPart(int part_num)
 	int portPart = usbHandle->GetPartitionPos(DeviceHandler::Instance()->GetPartitionPrefix(part_num));
 	int usbPort = DeviceHandler::Instance()->PartitionToPortUSB(part_num);
 
-	gprintf("\tWBFS_OpenPart: filesystem: %s, start sector %u, sector count: %u\n", usbHandle->GetFSName(portPart), usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart));
+	debughelper_printf("\tWBFS_OpenPart: filesystem: %s, start sector %u, sector count: %u\n", usbHandle->GetFSName(portPart), usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart));
 
 	if (strncmp(usbHandle->GetFSName(portPart), "FAT", 3) == 0)
 	{

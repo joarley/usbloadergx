@@ -10,7 +10,7 @@
 
 #include "system/IosLoader.h"
 #include "utils/tools.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "NandEmu.h"
 
 /* 'NAND Device' structure */
@@ -204,7 +204,7 @@ s32 Enable_Emu(int selection)
 	ret = Nand_Mount(ndev);
 	if (ret < 0)
 	{
-		gprintf(" ERROR Mount! (ret = %d)\n", ret);
+		debughelper_printf(" ERROR Mount! (ret = %d)\n", ret);
 		return ret;
 
 	}
@@ -212,7 +212,7 @@ s32 Enable_Emu(int selection)
 	ret = Nand_Enable(ndev);
 	if (ret < 0)
 	{
-		gprintf(" ERROR Enable! (ret = %d)\n", ret);
+		debughelper_printf(" ERROR Enable! (ret = %d)\n", ret);
 		return ret;
 	}
 	mounted = selection;

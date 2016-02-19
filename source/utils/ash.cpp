@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include "ash.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,11 +51,11 @@ u8*	DecompressAsh( const u8 *stuff, u32 &len )
 	r[5] = r[5] & 0x00FFFFFF;
 
 	u32 size = r[5];
-	//gprintf("Decompressed size: %d\n", size);
+	//debughelper_printf("Decompressed size: %d\n", size);
 	u8* buf1 = (u8*)memalign( 32, size );
 	if( !buf1 )
 	{
-		gprintf( "ASH: no memory\n" );
+		debughelper_printf( "ASH: no memory\n" );
 		return NULL;
 	}
 	r[3] = (u32)buf1;   //out
@@ -76,7 +76,7 @@ u8*	DecompressAsh( const u8 *stuff, u32 &len )
 	u8* workingBuffer = (u8*)memalign( 32, 0x100000 );
 	if( !workingBuffer )
 	{
-		gprintf( "ASH: no memory 2\n" );
+		debughelper_printf( "ASH: no memory 2\n" );
 		free( buf1 );
 		return NULL;
 	}
@@ -449,7 +449,7 @@ loc_81332434:
 	r[3] = r[0];
 	len = r[3];
 
-	//gprintf("Decompressed %d bytes\n", r[3]);
+	//debughelper_printf("Decompressed %d bytes\n", r[3]);
 	free( workingBuffer );
 	return buf1;
 }

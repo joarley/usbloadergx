@@ -23,7 +23,7 @@
 #include "themes/gettheme.h"
 #include "themes/Resources.h"
 #include "menu/menus.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 GCDeleteMenu::GCDeleteMenu(void)
 {
@@ -86,7 +86,7 @@ int GCDeleteMenu::Show()
 
 		else if (homeButton->GetState() == STATE_CLICKED)
 		{
-			gprintf("\thomeButton clicked\n");
+			debughelper_printf("\thomeButton clicked\n");
 			WindowExitPrompt();
 			mainWindow->SetState(STATE_DISABLED);
 			SetState(STATE_DEFAULT);

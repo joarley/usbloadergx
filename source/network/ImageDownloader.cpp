@@ -28,7 +28,7 @@
 #include "language/gettext.h"
 #include "usbloader/GetMissingGameFiles.hpp"
 #include "utils/StringTools.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #define VALID_IMAGE(x) (!(x.size == 36864 || x.size <= 1024 || x.size == 7386 || x.size <= 1174 || x.size == 4446 || x.data == NULL))
 
@@ -62,7 +62,7 @@ void ImageDownloader::DownloadImages()
 
 void ImageDownloader::Start()
 {
-	gprintf("CoverDownload start - choices: %04X\n", choices);
+	debughelper_printf("CoverDownload start - choices: %04X\n", choices);
 
 	MissingImagesCount = 0;
 	FindMissingImages();
@@ -80,7 +80,7 @@ void ImageDownloader::Start()
 
 	if (!IsNetworkInit() && !NetworkInitPrompt())
 	{
-		gprintf("No network\n");
+		debughelper_printf("No network\n");
 		return;
 	}
 
@@ -202,7 +202,7 @@ int ImageDownloader::DownloadProcess(int TotalDownloadCount)
 		{
 			if(MissingImages[i].backupURL)
 			{
-				gprintf("Trying backup URL.\n");
+				debughelper_printf("Trying backup URL.\n");
 				MissingImages[i].downloadURL = MissingImages[i].backupURL;
 				MissingImages[i].backupURL = NULL;
 				MissingImages[i].progressTitle = MissingImages[i].backupProgressTitle;
@@ -212,7 +212,7 @@ int ImageDownloader::DownloadProcess(int TotalDownloadCount)
 			continue;
 		}
 
-		gprintf(" - OK\n");
+		debughelper_printf(" - OK\n");
 		char imgPath[200];
 		snprintf(imgPath, sizeof(imgPath), "%s/%s%s", MissingImages[i].writepath, MissingImages[i].gameID.c_str(), MissingImages[i].fileExt);
 
@@ -242,7 +242,7 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 	if(strcmp(fileExt, ".bnr") == 0)
 	{
 		snprintf(downloadURL, sizeof(downloadURL), "%s%s.bnr", url, gameID);
-		gprintf("%s", downloadURL);
+		debughelper_printf("%s", downloadURL);
 		struct block file = downloadfile(downloadURL);
 		if(file.size > 132 && IsValidBanner(file.data)) // 132 = IMET magic location in the banner with u8 header
 			return file;
@@ -250,12 +250,12 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 		free(file.data);
 
 		snprintf(downloadURL, sizeof(downloadURL), "%s%.3s.bnr", url, gameID);
-		gprintf(" - Not found. trying ID3:\n%s", downloadURL);
+		debughelper_printf(" - Not found. trying ID3:\n%s", downloadURL);
 		file = downloadfile(downloadURL);
 		if(file.size > 132 && IsValidBanner(file.data))
 			return file;
 
-		gprintf(" - Not found.\n");
+		debughelper_printf(" - Not found.\n");
 		free(file.data);
 		memset(&file, 0, sizeof(struct block));
 		return file;
@@ -300,7 +300,7 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 			break;
 	}
 
-	gprintf("%s", downloadURL);
+	debughelper_printf("%s", downloadURL);
 	struct block file = downloadfile(downloadURL);
 	if(VALID_IMAGE(file))
 		return file;
@@ -311,7 +311,7 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 	if(PAL && strcmp(CheckedRegion, "EN") != 0)
 	{
 		snprintf(downloadURL, sizeof(downloadURL), "%sEN/%s.png", url, gameID);
-		gprintf(" - Not found.\n%s", downloadURL);
+		debughelper_printf(" - Not found.\n%s", downloadURL);
 		file = downloadfile(downloadURL);
 		if(VALID_IMAGE(file))
 			return file;
@@ -324,7 +324,7 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 			lang = "US";
 
 		snprintf(downloadURL, sizeof(downloadURL), "%s%s/%s.png", url, lang, gameID);
-		gprintf(" - Not found.\n%s", downloadURL);
+		debughelper_printf(" - Not found.\n%s", downloadURL);
 		file = downloadfile(downloadURL);
 		if(VALID_IMAGE(file))
 			return file;
@@ -332,7 +332,7 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 		free(file.data);
 
 		snprintf(downloadURL, sizeof(downloadURL), "%sOTHER/%s.png", url, gameID);
-		gprintf(" - Not found.\n%s", downloadURL);
+		debughelper_printf(" - Not found.\n%s", downloadURL);
 		file = downloadfile(downloadURL);
 		if(VALID_IMAGE(file))
 			return file;
@@ -343,7 +343,7 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 			free(file.data);
 			
 			snprintf(downloadURL, sizeof(downloadURL), "%s%s/%s.png", url, lang, gameID);
-			gprintf(" - Not found.\n%s", downloadURL);
+			debughelper_printf(" - Not found.\n%s", downloadURL);
 			file = downloadfile(downloadURL);
 			if(VALID_IMAGE(file))
 				return file;
@@ -355,7 +355,7 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 			free(file.data);
 			
 			snprintf(downloadURL, sizeof(downloadURL), "%s%s/%s.png", url, lang, gameID);
-			gprintf(" - Not found.\n%s", downloadURL);
+			debughelper_printf(" - Not found.\n%s", downloadURL);
 			file = downloadfile(downloadURL);
 			if(VALID_IMAGE(file))
 				return file;
@@ -364,14 +364,14 @@ struct block ImageDownloader::DownloadImage(const char * url, const char * gameI
 			free(file.data);
 			
 			snprintf(downloadURL, sizeof(downloadURL), "%s%s/%s.png", url, lang, gameID);
-			gprintf(" - Not found.\n%s", downloadURL);
+			debughelper_printf(" - Not found.\n%s", downloadURL);
 			file = downloadfile(downloadURL);
 			if(VALID_IMAGE(file))
 				return file;
 		}
 	}
 
-	gprintf(" - Not found.\n");
+	debughelper_printf(" - Not found.\n");
 	free(file.data);
 
 	memset(&file, 0, sizeof(struct block));
@@ -423,7 +423,7 @@ void ImageDownloader::CreateCSVLog()
 		}
 
 		fprintf(f, "\"%s\",\"%s\",\"%s\"\n", MissingImages[i].gameID.c_str(), GameTitles.GetTitle(MissingImages[i].gameID.c_str()), ImageType);
-		gprintf("\"%s\",\"%s\",\"%s\"\n", MissingImages[i].gameID.c_str(), GameTitles.GetTitle(MissingImages[i].gameID.c_str()), ImageType);
+		debughelper_printf("\"%s\",\"%s\",\"%s\"\n", MissingImages[i].gameID.c_str(), GameTitles.GetTitle(MissingImages[i].gameID.c_str()), ImageType);
 	}
 
 	fclose(f);

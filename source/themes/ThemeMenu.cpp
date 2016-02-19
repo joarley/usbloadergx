@@ -36,7 +36,7 @@
 #include "menu/menus.h"
 #include "utils/ShowError.h"
 #include "utils/tools.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 
 ThemeMenu::ThemeMenu()
@@ -197,7 +197,7 @@ void ThemeMenu::SetupMainButtons()
 	{
 		u8 *buffer = NULL;
 		u32 filesize;
-		gprintf("%i %s\n", i, ThemeDir.GetFilepath(i));
+		debughelper_printf("%i %s\n", i, ThemeDir.GetFilepath(i));
 		LoadFileToMem(ThemeDir.GetFilepath(i), &buffer, &filesize);
 
 		if(!buffer) continue;
@@ -290,7 +290,7 @@ void ThemeMenu::MainButtonClicked(int button)
 	const char * version = ThemeList[button].Version.c_str();
 	GuiImageData *thumbimageData = ThemePreviews[button % 4];
 
-	gprintf("\nTheme_Prompt(%s ,%s)", title, author);
+	debughelper_printf("\nTheme_Prompt(%s ,%s)", title, author);
 	bool leave = false;
 
 	GuiImageData btnOutline(Resources::GetFile("button_dialogue_box.png"), Resources::GetFileSize("button_dialogue_box.png"));

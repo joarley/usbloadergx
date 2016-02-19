@@ -14,7 +14,7 @@
 #include "usbloader/usb_new.h"
 #include "frag.h"
 #include "sys.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #define SAFE_FREE(x) if(x) { free(x); x = NULL; }
 
@@ -29,13 +29,13 @@ void frag_init(FragList *ff, int maxnum)
 void frag_dump(FragList *ff)
 {
 	u32 i;
-	gprintf("frag list: %d %d 0x%x\n", ff->num, ff->size, ff->size);
+	debughelper_printf("frag list: %d %d 0x%x\n", ff->num, ff->size, ff->size);
 	for (i=0; i<ff->num; i++) {
 		if (i>10) {
-			gprintf("...\n");
+			debughelper_printf("...\n");
 			break;
 		}
-		gprintf(" %d : %8x %8x %8x\n", i,
+		debughelper_printf(" %d : %8x %8x %8x\n", i,
 				ff->frag[i].offset,
 				ff->frag[i].count,
 				ff->frag[i].sector);
@@ -272,7 +272,7 @@ int set_frag_list(u8 *id)
 	// (+1 for header which is same size as fragment)
 	int size = sizeof(Fragment) * (frag_list->num + 1);
 
-	gprintf("Calling WDVD_SetFragList, frag list size %d\n", size);
+	debughelper_printf("Calling WDVD_SetFragList, frag list size %d\n", size);
 	int ret = WDVD_SetFragList(WBFS_MIN_DEVICE, frag_list, size);
 
 	free(frag_list);
@@ -285,6 +285,6 @@ int set_frag_list(u8 *id)
 	char discid[32] ATTRIBUTE_ALIGN(32);
 	memset(discid, 0, sizeof(discid));
 	ret = WDVD_UnencryptedRead(discid, 32, 0);
-	gprintf("Reading ID after setting fraglist: %s (expected: %s)\n", discid, id);
+	debughelper_printf("Reading ID after setting fraglist: %s (expected: %s)\n", discid, id);
 	return (strncasecmp((char *) id, discid, 6) != 0) ? -3 : 0;
 }

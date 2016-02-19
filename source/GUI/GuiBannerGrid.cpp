@@ -21,7 +21,6 @@
 #include "settings/newtitles.h"
 #include "SystemMenu/SystemMenuResources.h"
 #include "usbloader/GameList.h"
-#include "gecko.h"
 
 //! some math to get the row and column from channel idx
 static inline int Idx2Row(int sIdx)

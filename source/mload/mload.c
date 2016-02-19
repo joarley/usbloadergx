@@ -16,7 +16,7 @@
 */
 
 #include "mload.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 static const char mload_fs[] ATTRIBUTE_ALIGN(32) = "/dev/mload";
 
@@ -461,7 +461,7 @@ int wanin_mload_get_IOS_base()
 	if(mload_init()<0) return -1;
 
 	ret= IOS_IoctlvFormat(hid, mload_fd, MLOAD_GET_IOS_BASE, ":d", &ios, sizeof(ios));
-	//gprintf("get_ios_base: %d %x\n", ret, ios.dipVersion);
+	//debughelper_printf("get_ios_base: %d %x\n", ret, ios.dipVersion);
 	if (ret == 0) {
 		switch(ios.dipVersion) {
 			case 0x48776F72: /* DIP: 07/11/08 14:34:26 */
@@ -486,8 +486,8 @@ int mload_set_gecko_debug()
 	u32 log_mode = 2; // GECKO
 	if(mload_init()<0) return -1;
 
-	gprintf("Setting debug mode...");
+	debughelper_printf("Setting debug mode...");
 	ret = IOS_IoctlvFormat(hid, mload_fd, MLOAD_SET_LOG_MODE, ":d", &log_mode, sizeof(log_mode));
-	gprintf("%d\n", ret);
+	debughelper_printf("%d\n", ret);
 	return ret;
 }

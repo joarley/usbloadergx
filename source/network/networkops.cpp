@@ -20,7 +20,7 @@
 #include "main.h"
 #include "http.h"
 #include "svnrev.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "update.h"
 
 #define PORT			4299
@@ -229,14 +229,14 @@ char * HEAD_Request(const char * url)
 {
 	if(strncmp(url, "http://", strlen("http://")) != 0)
 	{
-		gprintf("Not a valid URL");
+		debughelper_printf("Not a valid URL");
 		return NULL;
 	}
 	char *path = strchr(url + strlen("http://"), '/');
 
 	if(!path)
 	{
-		gprintf("Not a valid URL path");
+		debughelper_printf("Not a valid URL path");
 		return NULL;
 	}
 
@@ -244,7 +244,7 @@ char * HEAD_Request(const char * url)
 
 	if(domainlength == 0)
 	{
-		gprintf("Not a valid domain");
+		debughelper_printf("Not a valid domain");
 		return NULL;
 	}
 
@@ -255,7 +255,7 @@ char * HEAD_Request(const char * url)
 	connection = GetConnection(domain);
 	if(connection < 0)
 	{
-		gprintf("Could not connect to the server.");
+		debughelper_printf("Could not connect to the server.");
 		return NULL;
 	}
 

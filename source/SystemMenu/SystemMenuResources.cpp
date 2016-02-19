@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "SystemMenu/SystemMenuResources.h"
 #include "memory/mem2.h"
 #include "utils/U8Archive.h"
@@ -49,7 +49,7 @@ bool SystemMenuResources::Init()
 	tmd *p_tmd = NandTitles.GetTMD( 0x100000002ull );
 	if( !p_tmd )
 	{
-		gprintf( "can\'t get system menu TMD\n" );
+		debughelper_printf( "can\'t get system menu TMD\n" );
 		return false;
 	}
 
@@ -66,7 +66,7 @@ bool SystemMenuResources::Init()
 	}
 	if( idx == 0xffff )
 	{
-		gprintf( "SM main resource not found\n" );
+		debughelper_printf( "SM main resource not found\n" );
 		return false;
 	}
 	// build file path
@@ -80,7 +80,7 @@ bool SystemMenuResources::Init()
 
 	if( ( ret = NandTitle::LoadFileFromNand( path, &resourceArc, &resourceLen ) ) < 0 )
 	{
-		gprintf( "Error reading resource from nand: %i\n", ret );
+		debughelper_printf( "Error reading resource from nand: %i\n", ret );
 		return false;
 	}
 
@@ -94,7 +94,7 @@ bool SystemMenuResources::Init()
 	chanTtlAsh = mainArc.GetFileAllocated( "/layout/common/chanTtl.ash", &chanTtlAshSize);
 	if(!chanTtlAsh)
 	{
-		gprintf( "Error while loading chanTtl.ash\n" );
+		debughelper_printf( "Error while loading chanTtl.ash\n" );
 	}
 	// move this to mem2
 	else if(!isMEM2Buffer(chanTtlAsh))
@@ -112,7 +112,7 @@ bool SystemMenuResources::Init()
 	chanSelAsh = mainArc.GetFileAllocated( "/layout/common/chanSel.ash", &chanSelAshSize);
 	if(!chanSelAsh)
 	{
-		gprintf( "Error while loading chanSel.ash\n" );
+		debughelper_printf( "Error while loading chanSel.ash\n" );
 	}
 	// move this to mem2
 	else if(!isMEM2Buffer(chanSelAsh))
@@ -130,7 +130,7 @@ bool SystemMenuResources::Init()
 	GCBannAsh = mainArc.GetFileAllocated( "/layout/common/GCBann.ash", &GCBannAshSize);
 	if(!GCBannAsh)
 	{
-		gprintf( "Error while loading GCBannAsh.ash\n" );
+		debughelper_printf( "Error while loading GCBannAsh.ash\n" );
 	}
 	// move this to mem2
 	else if(!isMEM2Buffer(GCBannAsh))
@@ -171,7 +171,7 @@ bool SystemMenuResources::InitFontArchive(void)
 	NandTitle::LoadFileFromNand(contentMapPath, &contentMap, &mapsize);
 	if(!contentMap)
 	{
-		gprintf( "!contentMap\n" );
+		debughelper_printf( "!contentMap\n" );
 		return false;
 	}
 
@@ -278,7 +278,7 @@ bool SystemMenuResources::InitSystemFontArchive(bool korean, u8 *contentMap, u32
 		}
 
 		free(fontArchive);
-		gprintf("Loaded Wii System Font\n");
+		debughelper_printf("Loaded Wii System Font\n");
 		return true;
 	}
 

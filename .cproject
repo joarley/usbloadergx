@@ -20,16 +20,18 @@
 					<folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.208664132.1472246604" name="/" resourcePath="">
 						<toolChain id="org.eclipse.linuxtools.cdt.autotools.core.toolChain.460911685" name="GNU Autotools Toolchain" superClass="org.eclipse.linuxtools.cdt.autotools.core.toolChain">
 							<targetPlatform id="org.eclipse.linuxtools.cdt.autotools.core.toolchain.targetPlatform.1480804628" isAbstract="false" name="GNU Autotools Target Platform" superClass="org.eclipse.linuxtools.cdt.autotools.core.toolchain.targetPlatform"/>
-							<builder id="cdt.managedbuild.builder.gnu.cross.603542484" superClass="cdt.managedbuild.builder.gnu.cross"/>
-							<tool id="org.eclipse.linuxtools.cdt.autotools.core.gnu.toolchain.tool.configure.740127719" name="configure" superClass="org.eclipse.linuxtools.cdt.autotools.core.gnu.toolchain.tool.configure"/>
+							<builder id="cdt.managedbuild.builder.gnu.cross.603542484" keepEnvironmentInBuildfile="false" name="Gnu Make Builder" superClass="cdt.managedbuild.builder.gnu.cross"/>
+							<tool id="org.eclipse.linuxtools.cdt.autotools.core.gnu.toolchain.tool.configure.740127719" name="configure" superClass="org.eclipse.linuxtools.cdt.autotools.core.gnu.toolchain.tool.configure">
+								<option id="org.eclipse.linuxtools.cdt.autotools.core.option.configure.name.781799926" name="Name" superClass="org.eclipse.linuxtools.cdt.autotools.core.option.configure.name" value="cdt.managedbuild.toolchain.gnu.cross.base.208664132" valueType="string"/>
+							</tool>
 							<tool id="org.eclipse.linuxtools.cdt.autotools.core.toolchain.tool.autogen.970373404" name="autogen.sh" superClass="org.eclipse.linuxtools.cdt.autotools.core.toolchain.tool.autogen"/>
 							<tool id="org.eclipse.linuxtools.cdt.autotools.core.toolchain.tool.gcc.875166116" name="GCC C Compiler" superClass="org.eclipse.linuxtools.cdt.autotools.core.toolchain.tool.gcc">
-								<option id="gnu.c.compiler.option.include.paths.182023038" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+								<option id="gnu.c.compiler.option.include.paths.182023038" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;C:\devkitPro\devkitPPC\powerpc-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\devkitPro\libogc\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\devkitPro\portlibs\ppc\include&quot;"/>
 								</option>
-								<option id="gnu.c.compiler.option.preprocessor.def.symbols.135280533" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+								<option id="gnu.c.compiler.option.preprocessor.def.symbols.135280533" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="HW_RVL=1"/>
 									<listOptionValue builtIn="false" value="true=1"/>
 									<listOptionValue builtIn="false" value="bool=int"/>
@@ -39,13 +41,13 @@
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.908320459" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="org.eclipse.linuxtools.cdt.autotools.core.toolchain.tool.gpp.2019078895" name="GCC C++ Compiler" superClass="org.eclipse.linuxtools.cdt.autotools.core.toolchain.tool.gpp">
-								<option id="gnu.cpp.compiler.option.include.paths.426228645" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+								<option id="gnu.cpp.compiler.option.include.paths.426228645" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;C:\devkitPro\devkitPPC\powerpc-eabi\include\c++\4.8.2&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\devkitPro\devkitPPC\powerpc-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\devkitPro\libogc\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\devkitPro\portlibs\ppc\include&quot;"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.preprocessor.def.1376089438" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+								<option id="gnu.cpp.compiler.option.preprocessor.def.1376089438" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="HW_RVL=1"/>
 									<listOptionValue builtIn="false" value="size_t=int"/>
 								</option>

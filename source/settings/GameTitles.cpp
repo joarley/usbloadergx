@@ -5,7 +5,6 @@
 #include "Channels/channels.h"
 #include "xml/GameTDB.hpp"
 #include "svnrev.h"
-#include "gecko.h"
 
 #define VALID_CACHE_REVISION	1148
 

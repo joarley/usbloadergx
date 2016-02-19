@@ -39,7 +39,7 @@
 #include "usbloader/wbfs/wbfs_rw.h"
 #include "utils/ShowError.h"
 #include "utils/tools.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 static const u32 BUF_SIZE = (64*1024);
 
@@ -288,21 +288,21 @@ s32 GCDumper::InstallGame(const char *installpath, u32 game, const char *install
 
 	FST *fst = (FST *)(FSTable);
 
-	gprintf("Dumping: %s %s\n", gcheader.title, compressed ? "compressed" : "full");
+	debughelper_printf("Dumping: %s %s\n", gcheader.title, compressed ? "compressed" : "full");
 
-	gprintf("Apploader size : %d\n", ApploaderSize);
-	gprintf("DOL offset	 : 0x%08x\n", DOLOffset);
-	gprintf("DOL size	   : %d\n", DOLSize);
-	gprintf("FST offset	 : 0x%08x\n", FSTOffset);
-	gprintf("FST size	   : %d\n", FSTSize);
-	gprintf("Num FST entries: %d\n", FSTEnt);
-	gprintf("Data Offset	: 0x%08x\n", FSTOffset+FSTSize);
-	gprintf("Disc size	  : %d\n", DiscSize);
+	debughelper_printf("Apploader size : %d\n", ApploaderSize);
+	debughelper_printf("DOL offset	 : 0x%08x\n", DOLOffset);
+	debughelper_printf("DOL size	   : %d\n", DOLSize);
+	debughelper_printf("FST offset	 : 0x%08x\n", FSTOffset);
+	debughelper_printf("FST size	   : %d\n", FSTSize);
+	debughelper_printf("Num FST entries: %d\n", FSTEnt);
+	debughelper_printf("Data Offset	: 0x%08x\n", FSTOffset+FSTSize);
+	debughelper_printf("Disc size	  : %d\n", DiscSize);
 	if(compressed)
-		gprintf("Compressed size: %d\n", discTotal);
+		debughelper_printf("Compressed size: %d\n", discTotal);
 
 
-	gprintf("Writing %s\n", gamepath);
+	debughelper_printf("Writing %s\n", gamepath);
 
 	s32 result = 0;
 
@@ -367,7 +367,7 @@ s32 GCDumper::InstallGame(const char *installpath, u32 game, const char *install
 		fseek(f, FSTOffset, SEEK_SET);
 		fwrite(fst, 1, FSTSize, f);
 
-		gprintf("Done!! Disc old size: %d, disc new size: %d, saved: %d\n", DiscSize, wrote, DiscSize - wrote);
+		debughelper_printf("Done!! Disc old size: %d, disc new size: %d, saved: %d\n", DiscSize, wrote, DiscSize - wrote);
 	}
 	else
 	{
@@ -375,7 +375,7 @@ s32 GCDumper::InstallGame(const char *installpath, u32 game, const char *install
 		if( ret < 0 )
 			result = -2;
 		else
-			gprintf("Done!! Disc size: %d\n", DiscSize);
+			debughelper_printf("Done!! Disc size: %d\n", DiscSize);
 	}
 
 	// Stop progress

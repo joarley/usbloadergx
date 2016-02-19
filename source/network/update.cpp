@@ -31,7 +31,6 @@
 #include <ogcsys.h>
 #include <string>
 
-#include "gecko.h"
 #include "ZipFile.h"
 #include "http.h"
 #include "networkops.h"
@@ -51,6 +50,7 @@
 #include "wad/wad.h"
 #include "sys.h"
 #include "svnrev.h"
+#include "../debughelper/debughelper.h"
 
 static const char * GameTDB_URL = "http://www.gametdb.com/wiitdb.zip";
 
@@ -127,7 +127,7 @@ static bool CheckNewGameTDBVersion(const char *url)
 
 	u64 ExistingVersion = XML_DB.GetGameTDBVersion();
 
-	gprintf("Existing GameTDB Version: %llu Online GameTDB Version: %llu\n", ExistingVersion, Version);
+	debughelper_printf("Existing GameTDB Version: %llu Online GameTDB Version: %llu\n", ExistingVersion, Version);
 
 	return (ExistingVersion != Version);
 }
@@ -136,11 +136,11 @@ int UpdateGameTDB()
 {
 	if(CheckNewGameTDBVersion(GameTDB_URL) == false)
 	{
-		gprintf("Not updating GameTDB: Version is the same\n");
+		debughelper_printf("Not updating GameTDB: Version is the same\n");
 		return -1;
 	}
 
-	gprintf("Updating GameTDB...\n");
+	debughelper_printf("Updating GameTDB...\n");
 
 	string ZipPath = Settings.titlestxt_path;
 	if(Settings.titlestxt_path[ZipPath.size()-1] != '/')
@@ -310,7 +310,7 @@ static int ApplicationDownload(void)
 
 		RemoveFile(tmppath);
 	#else
-		gprintf("%s\n%s\n", realpath, tmppath);
+		debughelper_printf("%s\n%s\n", realpath, tmppath);
 		RemoveFile(realpath);
 		if(!RenameFile(tmppath, realpath))
 			update_error = true;

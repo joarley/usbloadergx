@@ -22,20 +22,20 @@
 #include "settings/GameTitles.h"
 #include "themes/CTheme.h"
 #include "memory/memory.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 /********************************************************************************
  *Disk Browser
  *********************************************************************************/
 int DiscBrowse(const char * GameID, char * alternatedname, int alternatedname_size)
 {
-	gprintf("\nDiscBrowser() started");
+	debughelper_printf("\nDiscBrowser() started");
 	bool exit = false;
 	int ret = -1, choice;
 
 	HaltGui();
 
-	gprintf("WBFS_OpenDisc\n");
+	debughelper_printf("WBFS_OpenDisc\n");
 	wbfs_disc_t *disc = WBFS_OpenDisc((u8 *) GameID);
 	if (!disc)
 	{
@@ -43,7 +43,7 @@ int DiscBrowse(const char * GameID, char * alternatedname, int alternatedname_si
 		WindowPrompt(tr( "ERROR:" ), tr( "Could not open Disc" ), tr( "OK" ));
 		return ret;
 	}
-	gprintf("wd_open_disc\n");
+	debughelper_printf("wd_open_disc\n");
 	wiidisc_t *wdisc = wd_open_disc((int(*)(void *, u32, u32, void *)) wbfs_disc_read, disc);
 	if (!wdisc)
 	{
@@ -52,7 +52,7 @@ int DiscBrowse(const char * GameID, char * alternatedname, int alternatedname_si
 		return ret;
 	}
 
-	gprintf("wd_get_fst\n");
+	debughelper_printf("wd_get_fst\n");
 	FST_ENTRY * fstbuffer = (FST_ENTRY *) wd_extract_file(wdisc, ONLY_GAME_PARTITION, (char *) "FST");
 	if (!fstbuffer)
 	{
@@ -61,12 +61,12 @@ int DiscBrowse(const char * GameID, char * alternatedname, int alternatedname_si
 		return -1;
 	}
 
-	gprintf("wd_close_disc\n");
+	debughelper_printf("wd_close_disc\n");
 	wd_close_disc(wdisc);
-	gprintf("WBFS_CloseDisc\n");
+	debughelper_printf("WBFS_CloseDisc\n");
 	WBFS_CloseDisc(disc);
 
-	gprintf("options\n");
+	debughelper_printf("options\n");
 	OptionList options;
 
 	for (u32 i = 0, position = 0; i < fstbuffer[0].filelen; i++)
@@ -88,7 +88,7 @@ int DiscBrowse(const char * GameID, char * alternatedname, int alternatedname_si
 
 	free(fstbuffer);
 
-	gprintf("\n%i alt dols found", options.GetLength()+1);
+	debughelper_printf("\n%i alt dols found", options.GetLength()+1);
 	if (options.GetLength() <= 0)
 	{
 		WindowPrompt(tr( "ERROR" ), tr( "No DOL file found on disc." ), tr( "OK" ));

@@ -26,8 +26,7 @@
 #include "StartUpProcess.h"
 #include "usbloader/usb_new.h"
 #include "sys.h"
-#include "gecko.h"
-#include "wifi_debug.h"
+#include "debughelper/debughelper.h"
 
 extern "C"
 {
@@ -44,15 +43,11 @@ int main(int argc, char *argv[])
 	InitVideo();
 	// video frame buffers must be in mem1
 	MEM2_init(48);
-	// init gecko
-	if(InitGecko())
-	{
-		// redirect stdout and stderr to gecko
-		USBGeckoOutput();
-	} else if(wifi_debug_init()) {
-		wifi_debug_redirect_output();
+
+
+	debughelper_init();
+	debughelper_redirect_output();
 		_break();
-	}
 
 	NandTitles.Get();
 	setlocale(LC_ALL, "en.UTF-8");

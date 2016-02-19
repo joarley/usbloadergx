@@ -27,7 +27,7 @@
 #include "usbloader/disc.h"
 #include "usbloader/wbfs.h"
 #include "FileOperations/fileops.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 void CreateTitleTMD(const char *path, const struct discHdr *hdr)
 {
@@ -56,7 +56,7 @@ void CreateTitleTMD(const char *path, const struct discHdr *hdr)
 	{
 		fwrite(titleTMD, 1, tmd_size, f);
 		fclose(f);
-		gprintf("Written Game Title TDM to: %s\n", path);
+		debughelper_printf("Written Game Title TDM to: %s\n", path);
 	}
 
 	free(titleTMD);
@@ -67,7 +67,7 @@ static void CreateNandPath(const char *path)
 	if(CheckFile(path))
 		return;
 
-	gprintf("Creating Nand Path: %s\n", path);
+	debughelper_printf("Creating Nand Path: %s\n", path);
 	CreateSubfolder(path);
 }
 

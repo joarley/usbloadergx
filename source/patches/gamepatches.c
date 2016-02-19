@@ -5,7 +5,7 @@
 #include "usbloader/disc.h"
 #include "dolpatcher.h"
 #include "wip.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "patchcode.h"
 #include "gamepatches.h"
 #include "memory/memory.h"
@@ -595,7 +595,7 @@ static bool Search_and_patch_Video_Modes(u8 * Address, u32 Size, GXRModeObj* Tab
 					}
 				}
 
-				gprintf("Video mode found in dol: %s, replaced by: %s \n", vmodes_name[current_vmode], vmodes_name[target_vmode]);
+				debughelper_printf("Video mode found in dol: %s, replaced by: %s \n", vmodes_name[current_vmode], vmodes_name[target_vmode]);
 				found = 1;
 				patch_videomode((GXRModeObj*) Addr, Table[i + 1]);
 				Addr += (sizeof(GXRModeObj) - 4);
@@ -635,16 +635,16 @@ static bool Search_and_patch_Video_To(void *Address, u32 Size, GXRModeObj* Table
 		{
 			// display found video mode patterns
 			GXRModeObj* vidmode = (GXRModeObj*)Addr;
-			gprintf("Video pattern found \t%08x %04x %04x %04x %04x %04x %04x %04x %08x %04x %04x ",
+			debughelper_printf("Video pattern found \t%08x %04x %04x %04x %04x %04x %04x %04x %08x %04x %04x ",
 			vidmode->viTVMode, vidmode->fbWidth, vidmode->efbHeight, vidmode->xfbHeight, vidmode->viXOrigin, vidmode->viYOrigin, 
 			vidmode->viWidth, vidmode->viHeight, vidmode->xfbMode, vidmode->field_rendering, vidmode->aa);
-			gprintf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x ",
+			debughelper_printf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x ",
 			vidmode->sample_pattern[0][0],  vidmode->sample_pattern[1][0],  vidmode->sample_pattern[2][0],  vidmode->sample_pattern[3][0], vidmode->sample_pattern[4][0],
 			vidmode->sample_pattern[5][0],  vidmode->sample_pattern[6][0],  vidmode->sample_pattern[7][0],  vidmode->sample_pattern[8][0], vidmode->sample_pattern[9][0],
 			vidmode->sample_pattern[10][0], vidmode->sample_pattern[11][0], vidmode->sample_pattern[0][1],  vidmode->sample_pattern[1][1], vidmode->sample_pattern[2][1],
 			vidmode->sample_pattern[3][1],  vidmode->sample_pattern[4][1],  vidmode->sample_pattern[5][1],  vidmode->sample_pattern[6][1], vidmode->sample_pattern[7][1],
 			vidmode->sample_pattern[8][1],  vidmode->sample_pattern[9][1],  vidmode->sample_pattern[10][1], vidmode->sample_pattern[11][1]);
-			gprintf("%02x%02x%02x%02x%02x%02x%02x \n",
+			debughelper_printf("%02x%02x%02x%02x%02x%02x%02x \n",
 			vidmode->vfilter[0], vidmode->vfilter[1] , vidmode->vfilter[2], vidmode->vfilter[3] , vidmode->vfilter[4],vidmode->vfilter[5], vidmode->vfilter[6]);
 
 			found = 0;
@@ -653,7 +653,7 @@ static bool Search_and_patch_Video_To(void *Address, u32 Size, GXRModeObj* Table
 				if(compare_videomodes(Table[i], (GXRModeObj*)Addr))
 				{
 					found = 1;
-					gprintf("Video mode found in dol: %s, replaced by: %s \n", vmodes_name[i], vmodes_name[target_vmode]);
+					debughelper_printf("Video mode found in dol: %s, replaced by: %s \n", vmodes_name[i], vmodes_name[target_vmode]);
 					patch_videomode((GXRModeObj*)Addr, rmode);
 					Addr += (sizeof(GXRModeObj)-4);
 					Size -= (sizeof(GXRModeObj)-4);
@@ -663,7 +663,7 @@ static bool Search_and_patch_Video_To(void *Address, u32 Size, GXRModeObj* Table
 			}
 			if(patchAll && !found)
 			{
-				gprintf("Video mode found in dol: Unknown, replaced by: %s \n", vmodes_name[target_vmode]);
+				debughelper_printf("Video mode found in dol: Unknown, replaced by: %s \n", vmodes_name[target_vmode]);
 				patch_videomode((GXRModeObj*)Addr, rmode);
 				Addr += (sizeof(GXRModeObj)-4);
 				Size -= (sizeof(GXRModeObj)-4);
@@ -749,7 +749,7 @@ bool PatchReturnTo( void *Address, int Size, u32 id )
 {
 	if( !id || returnToPatched )
 		return 0;
-	//gprintf("PatchReturnTo( %p, %08x, %08x )\n", Address, Size, id );
+	//debughelper_printf("PatchReturnTo( %p, %08x, %08x )\n", Address, Size, id );
 
 	//new __OSLoadMenu() (SM2.0 and higher)
 	u8 SearchPattern[ 12 ] = 	{ 0x38, 0x80, 0x00, 0x02, 0x38, 0x60, 0x00, 0x01, 0x38, 0xa0, 0x00, 0x00 }; //li r4,2
@@ -818,7 +818,7 @@ bool PatchReturnTo( void *Address, int Size, u32 id )
 	//if the function is found
 	if( found == 3 && ad[ 3 ] )
 	{
-		//gprintf("patch __OSLaunchMenu( 0x00010001, 0x%08x )\n", id);
+		//debughelper_printf("patch __OSLaunchMenu( 0x00010001, 0x%08x )\n", id);
 		u32 nop = 0x60000000;
 
 		//the magic that writes the TID to the registers
@@ -849,7 +849,7 @@ bool PatchReturnTo( void *Address, int Size, u32 id )
 		addr = (u32*)ad[ 0 ];
 		memcpy( addr, &newval, sizeof( u32 ) );					//bl ad[ 3 ]
 		memcpy( addr + 4, &nop, sizeof( u32 ) );				//nop
-		//gprintf("\t%08x -> %08x\n", addr, newval );
+		//debughelper_printf("\t%08x -> %08x\n", addr, newval );
 
 		//ES_GetTicketViews() again
 		newval = ( ad[ 3 ] - ad[ 1 ] );
@@ -858,7 +858,7 @@ bool PatchReturnTo( void *Address, int Size, u32 id )
 		addr = (u32*)ad[ 1 ];
 		memcpy( addr, &newval, sizeof( u32 ) );					//bl ad[ 3 ]
 		memcpy( addr + 4, &nop, sizeof( u32 ) );				//nop
-		//gprintf("\t%08x -> %08x\n", addr, newval );
+		//debughelper_printf("\t%08x -> %08x\n", addr, newval );
 
 		//ES_LaunchTitle()
 		newval = ( ad[ 3 ] - ad[ 2 ] );
@@ -867,13 +867,13 @@ bool PatchReturnTo( void *Address, int Size, u32 id )
 		addr = (u32*)ad[ 2 ];
 		memcpy( addr, &newval, sizeof( u32 ) );					//bl ad[ 3 ]
 		memcpy( addr + 4, &nop, sizeof( u32 ) );				//nop
-		//gprintf("\t%08x -> %08x\n", addr, newval );
+		//debughelper_printf("\t%08x -> %08x\n", addr, newval );
 
 		returnToPatched = 1;
 	}
 
 	if(returnToPatched)
-		gprintf("Return to %08X patched with old method.\n", (u32) id);
+		debughelper_printf("Return to %08X patched with old method.\n", (u32) id);
 
 	return returnToPatched;
 }
@@ -899,7 +899,7 @@ int PatchNewReturnTo(int es_fd, u64 title)
 		result = IOS_Ioctlv(es_fd, 0xA1, 1, 0, vector);
 
 	if(result >= 0)
-		gprintf("Return to %08X patched with d2x method.\n", (u32) title);
+		debughelper_printf("Return to %08X patched with d2x method.\n", (u32) title);
 
 	free(vector);
 
@@ -931,7 +931,7 @@ int BlockIOSReload(int es_fd, u8 gameIOS)
 		result = IOS_Ioctlv(es_fd, 0xA0, inlen, 0, vector);
 
 	if(result >= 0)
-		gprintf("Block IOS Reload patched with d2x method to IOS%i; result: %i\n", gameIOS, result);
+		debughelper_printf("Block IOS Reload patched with d2x method to IOS%i; result: %i\n", gameIOS, result);
 
 	free(vector);
 
@@ -963,7 +963,7 @@ void PatchAspectRatio(void *addr, u32 len, u8 aspect)
 		   && (memcmp(addr_start + 4 + sizeof(aspect_searchpattern1), aspect_searchpattern2, sizeof(aspect_searchpattern2)) == 0))
 		{
 			*((u32 *)(addr_start+0x44)) = (0x38600000 | aspect);
-			gprintf("Aspect ratio patched to: %s\n", aspect ? "16:9" : "4:3");
+			debughelper_printf("Aspect ratio patched to: %s\n", aspect ? "16:9" : "4:3");
 			break;
 		}
 		addr_start += 4;

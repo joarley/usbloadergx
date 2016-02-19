@@ -33,7 +33,7 @@
 #include "utils/ShowError.h"
 #include "utils/tools.h"
 #include "utils/PasswordCheck.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "menus.h"
 #include "wpad.h"
 #include "sys.h"
@@ -907,7 +907,7 @@ int GameBrowseMenu::MainLoop()
 
 	if (updateavailable == true)
 	{
-		gprintf("\tUpdate Available\n");
+		debughelper_printf("\tUpdate Available\n");
 		SetState(STATE_DISABLED);
 		UpdateApp();
 		updateavailable = false;
@@ -916,7 +916,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (poweroffBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tpoweroffBtn clicked\n");
+		debughelper_printf("\tpoweroffBtn clicked\n");
 		int choice = 0;
 		if(isWiiU())
 			choice = WindowPrompt(tr( "How to Shutdown?" ), 0, tr( "Full shutdown" ), tr("Cancel"));
@@ -932,7 +932,7 @@ int GameBrowseMenu::MainLoop()
 	}
 	else if (gamecntBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tgameCntBtn clicked\n");
+		debughelper_printf("\tgameCntBtn clicked\n");
 		gamecntBtn->ResetState();
 
 		int choice = WindowPrompt(0, fmt("%s %sGameList ?", tr( "Save Game List to" ), Settings.update_path), "TXT", "CSV", tr( "Back" ));
@@ -946,7 +946,7 @@ int GameBrowseMenu::MainLoop()
 	}
 	else if (homeBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\thomeBtn clicked\n");
+		debughelper_printf("\thomeBtn clicked\n");
 		WindowExitPrompt();
 
 		homeBtn->ResetState();
@@ -989,7 +989,7 @@ int GameBrowseMenu::MainLoop()
 	}
 	else if (sdcardBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tsdCardBtn Clicked\n");
+		debughelper_printf("\tsdCardBtn Clicked\n");
 		if(WindowPrompt(tr("Are you sure you want to remount SD?"), tr("The application might crash if there is currently a read/write access to the SD card!"), tr("Yes"), tr("Cancel")))
 		{
 			HaltGui();
@@ -998,12 +998,12 @@ int GameBrowseMenu::MainLoop()
 			Settings.Save();
 			DeviceHandler::Instance()->UnmountSD();
 			DeviceHandler::Instance()->MountSD();
-			gprintf("\tLoading config...%s\n", Settings.Load() ? "done" : "failed");
-			gprintf("\tLoading language...%s\n", Settings.LoadLanguage(Settings.language_path, CONSOLE_DEFAULT) ? "done" : "failed");
-			gprintf("\tLoading game settings...%s\n", GameSettings.Load(Settings.ConfigPath) ? "done" : "failed");
-			gprintf("\tLoading game statistics...%s\n", GameStatistics.Load(Settings.ConfigPath) ? "done" : "failed");
-			gprintf("\tLoading font...%s\n", Theme::LoadFont(Settings.theme_path) ? "done" : "failed (using default)");
-			gprintf("\tLoading theme...%s\n", Theme::Load(Settings.theme) ? "done" : "failed (using default)");
+			debughelper_printf("\tLoading config...%s\n", Settings.Load() ? "done" : "failed");
+			debughelper_printf("\tLoading language...%s\n", Settings.LoadLanguage(Settings.language_path, CONSOLE_DEFAULT) ? "done" : "failed");
+			debughelper_printf("\tLoading game settings...%s\n", GameSettings.Load(Settings.ConfigPath) ? "done" : "failed");
+			debughelper_printf("\tLoading game statistics...%s\n", GameStatistics.Load(Settings.ConfigPath) ? "done" : "failed");
+			debughelper_printf("\tLoading font...%s\n", Theme::LoadFont(Settings.theme_path) ? "done" : "failed (using default)");
+			debughelper_printf("\tLoading theme...%s\n", Theme::Load(Settings.theme) ? "done" : "failed (using default)");
 			bgMusic->Resume();
 			gameList.FilterList();
 			ReloadBrowser();
@@ -1015,7 +1015,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (DownloadBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tDownloadBtn Clicked\n");
+		debughelper_printf("\tDownloadBtn Clicked\n");
 		ImageDownloader::DownloadImages();
 		ReloadBrowser();
 		DownloadBtn->ResetState();
@@ -1036,7 +1036,7 @@ int GameBrowseMenu::MainLoop()
 	else if (favoriteBtn->GetState() == STATE_CLICKED)
 	{
 		favoriteBtn->ResetState();
-		gprintf("\tfavoriteBtn Clicked\n");
+		debughelper_printf("\tfavoriteBtn Clicked\n");
 
 		if(Settings.GameSort & SORT_FAVORITE)
 			Settings.GameSort &= ~SORT_FAVORITE;
@@ -1057,7 +1057,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (searchBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tsearchBtn Clicked\n");
+		debughelper_printf("\tsearchBtn Clicked\n");
 		show_searchwindow = !show_searchwindow;
 		gameList.FilterList();
 		ReloadBrowser();
@@ -1110,7 +1110,7 @@ int GameBrowseMenu::MainLoop()
 	else if (sortBtn->GetState() == STATE_CLICKED)
 	{
 		sortBtn->ResetState();
-		gprintf("\tsortBtn clicked\n");
+		debughelper_printf("\tsortBtn clicked\n");
 		if(Settings.GameSort & SORT_ABC)
 		{
 			Settings.GameSort &= ~SORT_ABC;
@@ -1138,7 +1138,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (listBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tlistBtn Clicked\n");
+		debughelper_printf("\tlistBtn Clicked\n");
 		if (Settings.gameDisplay != LIST_MODE)
 		{
 			Settings.gameDisplay = LIST_MODE;
@@ -1149,7 +1149,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (gridBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tgridBtn Clicked\n");
+		debughelper_printf("\tgridBtn Clicked\n");
 		if (Settings.gameDisplay != GRID_MODE)
 		{
 			Settings.gameDisplay = GRID_MODE;
@@ -1160,7 +1160,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (carouselBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tcarouselBtn Clicked\n");
+		debughelper_printf("\tcarouselBtn Clicked\n");
 		if (Settings.gameDisplay != CAROUSEL_MODE)
 		{
 			Settings.gameDisplay = CAROUSEL_MODE;
@@ -1171,7 +1171,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (bannerGridBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tbannerGridBtn Clicked\n");
+		debughelper_printf("\tbannerGridBtn Clicked\n");
 		if(!SystemMenuResources::Instance()->IsLoaded()) {
 			WindowPrompt(tr( "Error:" ), tr( "Banner grid layout is only available with AHBPROT! Please consider installing new HBC version." ), tr( "OK" ));
 			bannerGridBtn->ResetState();
@@ -1187,13 +1187,13 @@ int GameBrowseMenu::MainLoop()
 
 	else if (homebrewBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\thomebrewBtn Clicked\n");
+		debughelper_printf("\thomebrewBtn Clicked\n");
 		return MENU_HOMEBREWBROWSE;
 	}
 
 	else if (gameInfo->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tgameinfo Clicked\n");
+		debughelper_printf("\tgameinfo Clicked\n");
 		int SelectedGame = GetSelectedGame();
 		gameInfo->ResetState();
 		if (SelectedGame >= 0 && SelectedGame < (s32) gameList.size())
@@ -1209,7 +1209,7 @@ int GameBrowseMenu::MainLoop()
 	}
 	else if (lockBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tlockBtn clicked\n");
+		debughelper_printf("\tlockBtn clicked\n");
 		lockBtn->ResetState();
 		if (Settings.godmode)
 		{
@@ -1315,7 +1315,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (Settings.gameDisplay == LIST_MODE && idBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tidBtn Clicked\n");
+		debughelper_printf("\tidBtn Clicked\n");
 		struct discHdr * header = gameList[GetSelectedGame()];
 		//enter new game ID
 		char entered[7];
@@ -1380,7 +1380,7 @@ void GameBrowseMenu::CheckDiscSlotUpdate()
 	}
 	else if (dvdBtn->GetState() == STATE_CLICKED)
 	{
-		gprintf("\tdvdBtn Clicked\n");
+		debughelper_printf("\tdvdBtn Clicked\n");
 		if(DiscDriveCover & 0x02)
 		{
 			if(!dvdheader)

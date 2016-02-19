@@ -28,6 +28,7 @@ distribution.
 #include <malloc.h>
 #include "Texture.h"
 #include "video.h"
+#include "../debughelper/debughelper.h"
 
 Texture::~Texture()
 {
@@ -53,7 +54,7 @@ void Texture::Load(const u8 *file )
 	{
 		// Never saw it happen
 		texture_count = 1;
-		gprintf("texture count > 1\n");
+		debughelper_printf("texture count > 1\n");
 	}
 
 	// read textures

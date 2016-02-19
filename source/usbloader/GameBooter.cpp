@@ -55,6 +55,7 @@
 #include "FileOperations/fileops.h"
 #include "prompts/ProgressWindow.h"
 #include "neek.hpp"
+#include "../debughelper/debughelper.h"
 
 //appentrypoint has to be global because of asm
 u32 AppEntrypoint = 0;
@@ -90,7 +91,7 @@ int GameBooter::BootGCMode(struct discHdr *gameHdr)
 	if(gameHdr->type == TYPE_GAME_GC_DISC)
 	{
 		ExitApp();
-		gprintf("\nLoading BC for GameCube");
+		debughelper_printf("\nLoading BC for GameCube");
 		WII_Initialize();
 		return WII_LaunchTitle(0x0000000100000100ULL);
 	}
@@ -102,7 +103,7 @@ int GameBooter::BootGCMode(struct discHdr *gameHdr)
 
 u32 GameBooter::BootPartition(char * dolpath, u8 videoselected, u8 alternatedol, u32 alternatedoloffset)
 {
-	gprintf("booting partition IOS %u r%u\n", IOS_GetVersion(), IOS_GetRevision());
+	debughelper_printf("booting partition IOS %u r%u\n", IOS_GetVersion(), IOS_GetRevision());
 	entry_point p_entry;
 	s32 ret;
 	u64 offset;
@@ -159,7 +160,7 @@ void GameBooter::SetupNandEmu(u8 NandEmuMode, const char *NandEmuPath, struct di
 		//! Create save game path and title.tmd for not existing saves
 		CreateSavePath(&gameHeader, NandEmuPath);
 
-		gprintf("Enabling %s Nand Emulation on: %s\n", NandEmuMode == 2 ? "Full" : "Partial" , NandEmuPath);
+		debughelper_printf("Enabling %s Nand Emulation on: %s\n", NandEmuMode == 2 ? "Full" : "Partial" , NandEmuPath);
 		Set_FullMode(NandEmuMode == 2);
 		Set_Path(strchr(NandEmuPath, '/'));
 
@@ -187,7 +188,7 @@ int GameBooter::SetupDisc(struct discHdr &gameHeader)
 {
 	if (gameHeader.type == TYPE_GAME_WII_DISC)
 	{
-		gprintf("\tloading DVD\n");
+		debughelper_printf("\tloading DVD\n");
 		return Disc_Open();
 	}
 
@@ -195,32 +196,32 @@ int GameBooter::SetupDisc(struct discHdr &gameHeader)
 
 	if(IosLoader::IsWaninkokoIOS() && IOS_GetRevision() < 18)
 	{
-		gprintf("Disc_SetUSB...");
+		debughelper_printf("Disc_SetUSB...");
 		ret = Disc_SetUSB(gameHeader.id);
-		gprintf("%d\n", ret);
+		debughelper_printf("%d\n", ret);
 		if(ret < 0) return ret;
 	}
 	else
 	{
-		gprintf("Loading fragment list...");
+		debughelper_printf("Loading fragment list...");
 		ret = get_frag_list(gameHeader.id);
-		gprintf("%d\n", ret);
+		debughelper_printf("%d\n", ret);
 		if(ret < 0) return ret;
 		ret = set_frag_list(gameHeader.id);
 		if(ret < 0) return ret;
-		gprintf("\tUSB set to game\n");
+		debughelper_printf("\tUSB set to game\n");
 	}
 
-	gprintf("Disc_Open()...");
+	debughelper_printf("Disc_Open()...");
 	ret = Disc_Open();
-	gprintf("%d\n", ret);
+	debughelper_printf("%d\n", ret);
 
 	return ret;
 }
 
 void GameBooter::ShutDownDevices(int gameUSBPort)
 {
-	gprintf("Shutting down devices...\n");
+	debughelper_printf("Shutting down devices...\n");
 	//! Flush all caches and close up all devices
 	WBFS_CloseAll();
 	DeviceHandler::DestroyInstance();
@@ -238,7 +239,7 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	struct discHdr gameHeader;
 	memcpy(&gameHeader, gameHdr, sizeof(struct discHdr));
 
-	gprintf("\tBootGame: %.6s\n", gameHeader.id);
+	debughelper_printf("\tBootGame: %.6s\n", gameHeader.id);
 
 	if(Settings.Wiinnertag)
 		Wiinnertag::TagGame((const char *) gameHeader.id);
@@ -280,7 +281,7 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 
 	AppCleanUp();
 
-	gprintf("\tSettings.partition: %d\n", Settings.partition);
+	debughelper_printf("\tSettings.partition: %d\n", Settings.partition);
 
 	s32 ret = -1;
 
@@ -294,7 +295,7 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	//! Reload game settings cIOS for this game
 	if(iosChoice != IOS_GetVersion())
 	{
-		gprintf("Reloading into game cIOS: %i...\n", iosChoice);
+		debughelper_printf("Reloading into game cIOS: %i...\n", iosChoice);
 		IosLoader::LoadGameCios(iosChoice);
 		if(MountGamePartition(false) < 0)
 			return -1;
@@ -306,9 +307,9 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 		// enable isfs permission if using IOS+AHB or Hermes v4
 		if(IOS_GetVersion() < 200 || (IosLoader::IsHermesIOS() && IOS_GetRevision() == 4))
 		{
-			gprintf("Patching IOS%d...\n", IOS_GetVersion());
+			debughelper_printf("Patching IOS%d...\n", IOS_GetVersion());
 			if (IosPatch_RUNTIME(true, false, false, false) == ERROR_PATCH)
-				gprintf("Patching %sIOS%d failed!\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
+				debughelper_printf("Patching %sIOS%d failed!\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
 		}
 
 		BNRInstance::Instance()->Load(&gameHeader);
@@ -342,9 +343,9 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 			Sys_BackToLoader();
 
 		//! Load BCA data for the game
-		gprintf("Loading BCA data...");
+		debughelper_printf("Loading BCA data...");
 		ret = do_bca_code(Settings.BcaCodepath, gameHeader.id);
-		gprintf("%d\n", ret);
+		debughelper_printf("%d\n", ret);
 	}
 
 	if(IosLoader::IsHermesIOS(iosChoice))
@@ -384,7 +385,7 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	//! Load main.dol or alternative dol into memory, start the game apploader and get game entrypoint
 	if(gameHeader.tid == 0)
 	{
-		gprintf("\tGame Boot\n");
+		debughelper_printf("\tGame Boot\n");
 		AppEntrypoint = BootPartition(Settings.dolpath, videoChoice, alternatedol, alternatedoloffset);
 		// Reading of game is done we can close devices now
 		ShutDownDevices(usbport);
@@ -393,7 +394,7 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	{
 		//! shutdown now and avoid later crashs with free if memory gets overwritten by channel
 		ShutDownDevices(DeviceHandler::Instance()->PartitionToPortUSB(DeviceHandler::Instance()->GetPartitionNumber(NandEmuPath)));
-		gprintf("\tChannel Boot\n");
+		debughelper_printf("\tChannel Boot\n");
 		/* Setup video mode */
 		Disc_SelectVMode(videoChoice, false, NULL, NULL);
 		// Load dol
@@ -403,20 +404,20 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	//! No entrypoint found...back to HBC/SystemMenu
 	if(AppEntrypoint == 0)
 	{
-		gprintf("AppEntryPoint is 0, something went wrong\n");
+		debughelper_printf("AppEntryPoint is 0, something went wrong\n");
 		WDVD_ClosePartition();
 		Sys_BackToLoader();
 	}
 
 	//! Do all the game patches
-	gprintf("Applying game patches...\n");
+	debughelper_printf("Applying game patches...\n");
 	gamepatches(videoChoice, videoPatchDolChoice, aspectChoice, languageChoice, countrystrings, viChoice, sneekChoice, Hooktype, returnToChoice, PrivServChoice);
 
 	//! Load Code handler if needed
 	load_handler(Hooktype, WiirdDebugger, Settings.WiirdDebuggerPause);
 
 	//! Jump to the entrypoint of the game - the last function of the USB Loader
-	gprintf("Jumping to game entrypoint: 0x%08X.\n", AppEntrypoint);
+	debughelper_printf("Jumping to game entrypoint: 0x%08X.\n", AppEntrypoint);
 	return Disc_JumpToEntrypoint(Hooktype, WDMMenu::GetDolParameter());
 }
 
@@ -538,11 +539,11 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 		snprintf(path, sizeof(path), "%s%.6s.gct", Settings.Cheatcodespath, (char *)gameHdr->id);
 		snprintf(destPath, sizeof(destPath), "%s:/DMLTemp.gct", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 
-		gprintf("DML: Copying %s to %s \n", path, destPath);
+		debughelper_printf("DML: Copying %s to %s \n", path, destPath);
 		res = CopyFile(path, destPath);
 		if(res < 0)
 		{
-			gprintf("DML: Couldn't copy the file. ret %d. Ocarina Disabled\n", res);
+			debughelper_printf("DML: Couldn't copy the file. ret %d. Ocarina Disabled\n", res);
 			RemoveFile(destPath);
 			ocarinaChoice = false;
 		}
@@ -604,7 +605,7 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 		if(dmlNoDisc2Choice && IosLoader::GetDMLVersion() >= DML_VERSION_DM_2_2_2 && IosLoader::GetDMLVersion() < DML_VERSION_DML_2_3m)
 			dml_config->Config |= DML_CFG_NODISC2;	// used by v2.2 update2 as an Extended NoDisc patching
 
-		gprintf("DML: Loading game %s\n", dml_config->GamePath);
+		debughelper_printf("DML: Loading game %s\n", dml_config->GamePath);
 	}
 	else
 	{
@@ -628,7 +629,7 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 		}
 
 		dml_config->Config |= DML_CFG_CHEATS | DML_CFG_CHEAT_PATH;
-		gprintf("DML: Loading cheat %s\n", dml_config->CheatPath);
+		debughelper_printf("DML: Loading cheat %s\n", dml_config->CheatPath);
 	}
 
 	// other DML configs
@@ -681,8 +682,8 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 	DCFlushRange((u8*)DML_CONFIG_ADDRESS_V1_2, sizeof(DML_CFG));
 
 	// print the config set for DML
-	gprintf("DML: setup configuration 0x%X\n", dml_config->Config);
-	gprintf("DML: setup video mode 0x%X\n", dml_config->VideoMode);
+	debughelper_printf("DML: setup configuration 0x%X\n", dml_config->Config);
+	debughelper_printf("DML: setup video mode 0x%X\n", dml_config->VideoMode);
 
 	// Set Sram flags
 	bool progressive = (dml_config->VideoMode & DML_VID_FORCE_PROG) || (dml_config->VideoMode & DML_VID_PROG_PATCH);
@@ -693,7 +694,7 @@ int GameBooter::BootDIOSMIOS(struct discHdr *gameHdr)
 	if(dmlJPNPatchChoice && diskid[3] == 'J')
 		*HW_PPCSPEED = 0x0002A9E0;
 
-	gprintf("\nLoading BC for GameCube\n");
+	debughelper_printf("\nLoading BC for GameCube\n");
 	WII_Initialize();
 	return WII_LaunchTitle(0x0000000100000100ULL);
 }
@@ -867,7 +868,7 @@ int GameBooter::BootDevolution(struct discHdr *gameHdr)
 			{
 				// make it 16MB
 				ShowProgress(tr("Please wait..."), 0, 0);
-				gprintf("Resizing memcard file...\n");
+				debughelper_printf("Resizing memcard file...\n");
 				fseek(f, (16 << 20) - 1, SEEK_SET);
 				fputc(0, f);
 				fclose(f);
@@ -912,9 +913,9 @@ int GameBooter::BootDevolution(struct discHdr *gameHdr)
 	ExitApp();
 	IosLoader::ReloadIosKeepingRights(58); // reload IOS 58 with AHBPROT rights
 
-	gprintf("DEVO: Loading game: %s\n", disc1);
-	gprintf("DEVO: Memory Card: %s\n\n", DEVO_memCard);
-	gprintf("%.72s", (const char*)loader_bin + 4);
+	debughelper_printf("DEVO: Loading game: %s\n", disc1);
+	debughelper_printf("DEVO: Memory Card: %s\n\n", DEVO_memCard);
+	debughelper_printf("%.72s", (const char*)loader_bin + 4);
 
 	u32 cpu_isr;
 	SYS_ResetSystem(SYS_SHUTDOWN, 0, 0);
@@ -1014,8 +1015,8 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		WindowPrompt(tr("Error:"), tr("To run GameCube games with Nintendont you need the boot.dol file in your Nintendont Loader Path."), tr("OK"));
 		return -1;
 	}
-	gprintf("NIN: Loader path = %s \n",NIN_loader_path);
-	gprintf("NIN: Game path   = %s \n",RealPath);
+	debughelper_printf("NIN: Loader path = %s \n",NIN_loader_path);
+	debughelper_printf("NIN: Game path   = %s \n",RealPath);
 
 	// Check Nintendont version
 	u32 NIN_cfg_version = NIN_CFG_VERSION;
@@ -1025,7 +1026,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 	NINRev = nintendontVersion(Settings.NINLoaderPath, NINVersion, sizeof(NINVersion));
 	if(NINRev > 0) // Version available since 3.324
 	{
-		gprintf("NIN: Nintendont revision = %d \n", NINRev);
+		debughelper_printf("NIN: Nintendont revision = %d \n", NINRev);
 
 		NINArgsboot = true; //	no need to check argsboot string, 3.324+ supports it.
 	}
@@ -1051,7 +1052,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 			strptime("Mar 30 2014 12:33:44", "%b %d %Y %H:%M:%S", &time); // r42 - NIN_CFG_VERSION = 2
 			if(NINLoaderTime < mktime(&time))
 			{
-				gprintf("Nintendont r01 - r40 detected. Using CFG version 0x00000001\n");
+				debughelper_printf("Nintendont r01 - r40 detected. Using CFG version 0x00000001\n");
 				NIN_cfg_version = 1;
 
 				strptime("Mar 29 2014 10:49:31", "%b %d %Y %H:%M:%S", &time); // r39
@@ -1066,7 +1067,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 			strptime("Aug  5 2014 22:38:21", "%b %d %Y %H:%M:%S", &time); // v1.135 - NIN_CFG_VERSION = 3
 			if(NINLoaderTime < mktime(&time) && NIN_cfg_version != 1)
 			{
-				gprintf("Nintendont v1.01 - v1.134 detected. Using CFG version 0x00000002\n");
+				debughelper_printf("Nintendont v1.01 - v1.134 detected. Using CFG version 0x00000002\n");
 				NIN_cfg_version = 2;
 				// no need to fake NIN_CFG struct size, the size is checked in nintendont only since v1.143
 			}
@@ -1112,7 +1113,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 					{
 						if((*(u32*)(buffer+i)) == 'args' && (*(u32*)(buffer+i+4)) == 'boot')
 						{
-							gprintf("NIN: argsboot found at %08x, using arguments instead of Nincfg.bin\n", i);
+							debughelper_printf("NIN: argsboot found at %08x, using arguments instead of Nincfg.bin\n", i);
 							NINArgsboot = true;
 							break;
 						}
@@ -1165,11 +1166,11 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		snprintf(path, sizeof(path), "%s%.6s.gct", Settings.Cheatcodespath, (char *)gameHdr->id);
 		snprintf(destPath, sizeof(destPath), "%s:/NINTemp.gct", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
 
-		gprintf("NIN: Copying %s to %s \n", path, destPath);
+		debughelper_printf("NIN: Copying %s to %s \n", path, destPath);
 		res = CopyFile(path, destPath);
 		if(res < 0)
 		{
-			gprintf("NIN: Couldn't copy the file. ret %d. Ocarina Disabled\n", res);
+			debughelper_printf("NIN: Couldn't copy the file. ret %d. Ocarina Disabled\n", res);
 			RemoveFile(destPath);
 			ocarinaChoice = false;
 		}
@@ -1188,12 +1189,12 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 				char kenobiwii_srcpath[30];
 
 				snprintf(kenobiwii_srcpath, sizeof(kenobiwii_srcpath), "%s:/sneek/kenobiwii.bin", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
-				gprintf("kenobiwii source path = %s \n", kenobiwii_srcpath);
+				debughelper_printf("kenobiwii source path = %s \n", kenobiwii_srcpath);
 				if(CheckFile(kenobiwii_srcpath))
 				{
 					if(CopyFile(kenobiwii_srcpath, kenobiwii_path) < 0)
 					{
-						gprintf("NIN: Couldn't copy %s to %s.\n", kenobiwii_srcpath, kenobiwii_path);
+						debughelper_printf("NIN: Couldn't copy %s to %s.\n", kenobiwii_srcpath, kenobiwii_path);
 						RemoveFile(kenobiwii_path);
 						if(WindowPrompt(tr("Warning:"), fmt(tr("To use ocarina with %s you need the %s file."), LoaderName, kenobiwii_path), tr("Continue"), tr("Cancel")) == 0)
 							return -1;
@@ -1201,14 +1202,14 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 				}
 				else
 				{
-					gprintf("kenobiwii source path = %s Not found.\n", kenobiwii_srcpath);
+					debughelper_printf("kenobiwii source path = %s Not found.\n", kenobiwii_srcpath);
 					if(WindowPrompt(tr("Warning:"), fmt(tr("To use ocarina with %s you need the %s file."), LoaderName, kenobiwii_path), tr("Continue"), tr("Cancel")) == 0)
 						return -1;
 				}
 			}
 			else
 			{
-				gprintf("kenobiwii path = %s Not found.\n", kenobiwii_path);
+				debughelper_printf("kenobiwii path = %s Not found.\n", kenobiwii_path);
 				if(WindowPrompt(tr("Warning:"), fmt(tr("To use ocarina with %s you need the %s file."), LoaderName, kenobiwii_path), tr("Continue"), tr("Cancel")) == 0)
 				return -1;
 			}
@@ -1226,12 +1227,12 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 			// try to copy controller.ini from the other device
 			char controllerini_srcpath[30];
 			snprintf(controllerini_srcpath, sizeof(controllerini_srcpath), "%s:/controller.ini", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
-			gprintf("Controller.ini source path = %s \n", controllerini_srcpath);
+			debughelper_printf("Controller.ini source path = %s \n", controllerini_srcpath);
 			if(CheckFile(controllerini_srcpath))
 			{
 				if(CopyFile(controllerini_srcpath, controllerini_path) < 0)
 				{
-					gprintf("NIN: Couldn't copy %s to %s.\n", controllerini_srcpath, controllerini_path);
+					debughelper_printf("NIN: Couldn't copy %s to %s.\n", controllerini_srcpath, controllerini_path);
 					RemoveFile(controllerini_path);
 					if(NINRev < 304) // HID is always enabled and controller.ini optional since r304
 					{
@@ -1250,12 +1251,12 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 					// try to copy controllers folder from the other device
 					char controllerini_srcpath[30];
 					snprintf(controllerini_srcpath, sizeof(controllerini_srcpath), "%s:/controllers/", strncmp(RealPath, "usb", 3) == 0 ? "sd" : DeviceHandler::Instance()->GetPartitionPrefix(Settings.GameCubePath));
-					gprintf("Controllers folder source path = %s \n", controllerini_srcpath);
+					debughelper_printf("Controllers folder source path = %s \n", controllerini_srcpath);
 					if(CheckFile(controllerini_srcpath))
 					{
 						if(CopyDirectory(controllerini_srcpath, controllerini_path) < 0)
 						{
-							gprintf("NIN: Couldn't copy %s to %s.\n", controllerini_srcpath, controllerini_path);
+							debughelper_printf("NIN: Couldn't copy %s to %s.\n", controllerini_srcpath, controllerini_path);
 							RemoveDirectory(controllerini_path);
 						}
 					}
@@ -1313,7 +1314,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 	nin_config = (NIN_CFG *)MEM2_alloc(sizeof(NIN_CFG));
 	if(!nin_config)
 	{
-		gprintf("Not enough memory to create nincfg.bin file.\n");
+		debughelper_printf("Not enough memory to create nincfg.bin file.\n");
 		WindowPrompt(tr("Error:"), tr("Could not write file."), tr("OK"));
 		return -1;
 	}
@@ -1344,7 +1345,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		}
 
 		nin_config->Config |= NIN_CFG_CHEATS | NIN_CFG_CHEAT_PATH;
-		gprintf("NIN: Loading cheat %s\n", nin_config->CheatPath);
+		debughelper_printf("NIN: Loading cheat %s\n", nin_config->CheatPath);
 	}
 
 
@@ -1434,9 +1435,9 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		Disc_SetVMode();
 	}
 
-	gprintf("NIN: Active device %s\n", nin_config->Config & NIN_CFG_USB ? "USB" : "SD");
-	gprintf("NIN: config 0x%08x\n", nin_config->Config);
-	gprintf("NIN: Video mode 0x%08x\n", nin_config->VideoMode);
+	debughelper_printf("NIN: Active device %s\n", nin_config->Config & NIN_CFG_USB ? "USB" : "SD");
+	debughelper_printf("NIN: config 0x%08x\n", nin_config->Config);
+	debughelper_printf("NIN: Video mode 0x%08x\n", nin_config->VideoMode);
 
 	// Set game language setting
 	if(languageChoice >= GC_ENGLISH && languageChoice <= GC_DUTCH)
@@ -1451,7 +1452,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 			nin_config->Language = CONF_GetLanguage()-1;
 		}
 	}
-	gprintf("NIN: Language 0x%08x \n", nin_config->Language);
+	debughelper_printf("NIN: Language 0x%08x \n", nin_config->Language);
 
 	// Delete existing nincfg.bin files
 	if(ninSettingsChoice == OFF)
@@ -1475,7 +1476,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		// Nintendont Config file path
 		char NINCfgPath[17];
 		snprintf(NINCfgPath, sizeof(NINCfgPath), "%s:/nincfg.bin", DeviceHandler::Instance()->GetPartitionPrefix(NIN_loader_path));
-		gprintf("NIN: Cfg path : %s \n", NINCfgPath);
+		debughelper_printf("NIN: Cfg path : %s \n", NINCfgPath);
 
 		//write config file to nintendont's partition root.
 		FILE *fp = fopen(NINCfgPath, "wb");
@@ -1486,7 +1487,7 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		}
 		else
 		{
-			gprintf("Could not open NINCfgPath in write mode");
+			debughelper_printf("Could not open NINCfgPath in write mode");
 			int choice = WindowPrompt(tr("Warning:"), tr("USBloaderGX couldn't write Nintendont config file. Launch Nintendont anyway?"), tr("Yes"), tr("Cancel"));
 			if(choice == 0)
 				return -1;
@@ -1497,15 +1498,15 @@ int GameBooter::BootNintendont(struct discHdr *gameHdr)
 		{
 			char NINDestPath[17];
 			snprintf(NINDestPath, sizeof(NINDestPath), "%s:/nincfg.bin", DeviceHandler::Instance()->GetPartitionPrefix(RealPath));
-			gprintf("NIN: Copying %s to %s...", NINCfgPath, NINDestPath);
+			debughelper_printf("NIN: Copying %s to %s...", NINCfgPath, NINDestPath);
 			if(CopyFile(NINCfgPath, NINDestPath) < 0)
 			{
-				gprintf("\nError: Couldn't copy %s to %s.\n", NINCfgPath, NINDestPath);
+				debughelper_printf("\nError: Couldn't copy %s to %s.\n", NINCfgPath, NINDestPath);
 				RemoveFile(NINDestPath);
 				if(WindowPrompt(tr("Warning:"), tr("USBloaderGX couldn't write Nintendont config file. Launch Nintendont anyway?"), tr("Yes"), tr("Cancel")) == 0)
 					return -1;
 			}
-			gprintf("done\n");
+			debughelper_printf("done\n");
 		}
 	}
 
@@ -1569,7 +1570,7 @@ int GameBooter::BootNeek(struct discHdr *gameHdr)
 	if(neekMode == 1)
 	{
 		ret = neek2oSetNAND(NandEmuPath);
-		gprintf("NEEK: Setting EmuNAND in nandcfg.bin : %d \n", ret);
+		debughelper_printf("NEEK: Setting EmuNAND in nandcfg.bin : %d \n", ret);
 		if(ret < 0)
 		{
 			WindowPrompt(tr("Error:"), tr("Neek NAND path selection failed."), tr("OK"));
@@ -1720,8 +1721,8 @@ int GameBooter::BootNeek(struct discHdr *gameHdr)
 
 	DCFlushRange(neek_config, sizeof(NEEK_CFG));
 
-	gprintf("NEEK: Settings:");
-	hexdump((u8*) NEEK_CONFIG_ADDRESS, sizeof(NEEK_CFG));
+	debughelper_printf("NEEK: Settings:");
+	debughelper_hexdump((u8*) NEEK_CONFIG_ADDRESS, sizeof(NEEK_CFG));
 
 	if(neekBoot() == -1)
 		Sys_BackToLoader();
@@ -1745,7 +1746,7 @@ void GameBooter::PatchSram(int language, bool patchVideoMode, bool progressive)
 			sram->lang = CONF_GetLanguage()-1;
 		}
 	}
-	gprintf("Sram: Language set to 0x%02x\n", sram->lang);
+	debughelper_printf("Sram: Language set to 0x%02x\n", sram->lang);
 
 	// Setup Video mode flags
 	if(patchVideoMode)
@@ -1766,8 +1767,8 @@ void GameBooter::PatchSram(int language, bool patchVideoMode, bool progressive)
 			sram->ntd |= 0x40; //set pal60 flag
 		}
 
-		gprintf("Sram: flags set to 0x%02x\n", sram->flags);
-		gprintf("Sram: ntd set to 0x%02x\n", sram->ntd);
+		debughelper_printf("Sram: flags set to 0x%02x\n", sram->flags);
+		debughelper_printf("Sram: ntd set to 0x%02x\n", sram->ntd);
 	}
 
 	__SYS_UnlockSram(1); // 1 -> write changes
@@ -1782,14 +1783,14 @@ void GameBooter::PatchSram(int language, bool patchVideoMode, bool progressive)
 	__SYS_UnlockSram(0);
 
 	int i;
-	gprintf("SRAM Hex View\n\n");
-	gprintf("     \t\t 0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F\n");
+	debughelper_printf("SRAM Hex View\n\n");
+	debughelper_printf("     \t\t 0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F\n");
 	for (i=0;i<20;i++)
 	{
 		if( (i%16) == 0 )
-			gprintf("\n0x%d0h\t\t", i/16);
+			debughelper_printf("\n0x%d0h\t\t", i/16);
 
-		gprintf("%02X  ", srambuff[i]);
+		debughelper_printf("%02X  ", srambuff[i]);
 	}
 */
 }

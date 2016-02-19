@@ -2,11 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "gecko.h"
 
 #include "settings/CSettings.h"
 #include "memory/mem2.h"
 #include "wip.h"
+#include "../debughelper/debughelper.h"
 
 static WIP_Code * CodeList = NULL;
 static u32 CodesCount = 0;
@@ -38,12 +38,12 @@ extern "C" void do_wip_code(u8 * dst, u32 len)
 			if (dst[offset] == ((u8 *) &CodeList[i].srcaddress)[n])
 			{
 				dst[offset] = ((u8 *) &CodeList[i].dstaddress)[n];
-				gprintf("WIP: %08X Address Patched.\n", CodeList[i].offset + n);
+				debughelper_printf("WIP: %08X Address Patched.\n", CodeList[i].offset + n);
 			}
 			else
 			{
-				gprintf("WIP: %08X Address does not match with WIP entrie.\n", CodeList[i].offset + n);
-				gprintf("Destination: %02X | Should be: %02X.\n", dst[offset], ((u8 *) &CodeList[i].srcaddress)[n]);
+				debughelper_printf("WIP: %08X Address does not match with WIP entrie.\n", CodeList[i].offset + n);
+				debughelper_printf("Destination: %02X | Should be: %02X.\n", dst[offset], ((u8 *) &CodeList[i].srcaddress)[n]);
 			}
 		}
 	}
@@ -113,7 +113,7 @@ extern "C" int load_wip_code(u8 *gameid)
 	free_wip();
 
 	char line[255];
-	gprintf("\nLoading WIP code from %s.\n", filepath);
+	debughelper_printf("\nLoading WIP code from %s.\n", filepath);
 
 	while (fgets(line, sizeof(line), fp))
 	{
@@ -145,7 +145,7 @@ extern "C" int load_wip_code(u8 *gameid)
 		CodesCount++;
 	}
 	fclose(fp);
-	gprintf("\n");
+	debughelper_printf("\n");
 
 	return 0;
 }

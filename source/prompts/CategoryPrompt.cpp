@@ -29,7 +29,7 @@
 #include "themes/gettheme.h"
 #include "themes/Resources.h"
 #include "menu/menus.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 CategoryPrompt::CategoryPrompt(const string &title)
 	: GuiWindow(0, 0)
@@ -206,7 +206,7 @@ int CategoryPrompt::Show()
 
 		else if (homeButton->GetState() == STATE_CLICKED)
 		{
-			gprintf("\thomeButton clicked\n");
+			debughelper_printf("\thomeButton clicked\n");
 			WindowExitPrompt();
 			mainWindow->SetState(STATE_DISABLED);
 			SetState(STATE_DEFAULT);

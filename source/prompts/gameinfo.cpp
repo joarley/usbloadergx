@@ -20,7 +20,6 @@
 #include "settings/GameTitles.h"
 #include "gameinfo.h"
 #include "usbloader/GameList.h"
-#include "gecko.h"
 #include "xml/GameTDB.hpp"
 #include "utils/ShowError.h"
 #include "BoxCover/BoxCover.hpp"

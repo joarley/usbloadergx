@@ -4,7 +4,7 @@
 #include "FileOperations/fileops.h"
 #include "usbloader/GameList.h"
 #include "wstring.hpp"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 extern struct discHdr *dvdheader;
 
@@ -67,7 +67,7 @@ int GetMissingGameFiles(const char * path, const char * fileext, std::vector<std
 	//! Bring game list to the old state
 	gameList.FilterList(oldFilter.c_str());
 
-	gprintf(" = %i", MissingFilesList.size());
+	debughelper_printf(" = %i", MissingFilesList.size());
 
 	return MissingFilesList.size();
 }

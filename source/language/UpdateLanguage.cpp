@@ -19,7 +19,7 @@
 #include "prompts/PromptWindows.h"
 #include "prompts/ProgressWindow.h"
 #include "utils/ShowError.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "svnrev.h"
 
 static const char * LanguageFilesURL = "http://svn.code.sf.net/p/usbloadergx/code/trunk/Languages/";
@@ -63,7 +63,7 @@ int DownloadAllLanguageFiles(int revision)
 		if (!FileExt || strcasecmp(FileExt, ".lang") != 0)
 			continue;
 
-		gprintf("%s\n", filename);
+		debughelper_printf("%s\n", filename);
 
 		ShowProgress(tr("Updating Language Files:"), 0, filename, i, listsize, false, true);
 

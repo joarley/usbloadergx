@@ -17,7 +17,7 @@
 #include "settings/SettingsEnums.h"
 #include "GameCube/DML_Config.h"
 #include "GameCube/NIN_Config.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 // Global app entry point
 extern u32 AppEntrypoint;
@@ -315,7 +315,7 @@ s32 Disc_Mount(struct discHdr *header)
 	if(!header)
 		return -1;
 
-	gprintf("\nDiscMount() ");
+	debughelper_printf("\nDiscMount() ");
 	s32 ret;
 
 	u8 tmpBuff[0x60];

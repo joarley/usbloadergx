@@ -28,8 +28,6 @@
 #include "utils/tools.h"
 #include "wbfs_rw.h"
 
-#include "gecko.h"
-
 #define MAX_FAT_PATH 1024
 #define TITLE_LEN 64
 

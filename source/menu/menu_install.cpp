@@ -11,7 +11,7 @@
 #include "themes/CTheme.h"
 #include "utils/tools.h"
 #include "system/IosLoader.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 #define WII_MAGIC   0x5D1C9EA3
 
@@ -202,7 +202,7 @@ int MenuGCInstall()
  ***************************************************************************/
 int MenuInstall()
 {
-	gprintf("\nMenuInstall()\n");
+	debughelper_printf("\nMenuInstall()\n");
 
 	static struct discHdr headerdisc ATTRIBUTE_ALIGN( 32 );
 

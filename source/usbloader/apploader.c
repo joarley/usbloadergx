@@ -9,7 +9,7 @@
 #include "disc.h"
 #include "alternatedol.h"
 #include "fstfile.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 #include "patches/gamepatches.h"
 #include "patches/wip.h"
 #include "settings/SettingsEnums.h"
@@ -38,7 +38,7 @@ s32 Apploader_Run(entry_point *entry, char * dolpath, u8 alternatedol, u32 alter
 
 	u32 appldr_len;
 	s32 ret;
-	gprintf("\nApploader_Run() started\n");
+	debughelper_printf("\nApploader_Run() started\n");
 
 	/* Read apploader header */
 	ret = WDVD_Read(buffer, 0x20, APPLDR_OFFSET);
@@ -58,7 +58,7 @@ s32 Apploader_Run(entry_point *entry, char * dolpath, u8 alternatedol, u32 alter
 	appldr_entry(&appldr_init, &appldr_main, &appldr_final);
 
 	/* Initialize apploader */
-	appldr_init(gprintf);
+	appldr_init(printf);
 
 	for (;;)
 	{

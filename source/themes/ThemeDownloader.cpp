@@ -39,7 +39,7 @@
 #include "ZipFile.h"
 #include "utils/ShowError.h"
 #include "utils/tools.h"
-#include "gecko.h"
+#include "../debughelper/debughelper.h"
 
 
 ThemeDownloader::ThemeDownloader()
@@ -291,7 +291,7 @@ void ThemeDownloader::MainButtonClicked(int button)
 	GuiImageData *thumbimageData = ThemePreviews[button % 4];
 	const char *downloadlink = ThemeList->GetDownloadLink(button);
 
-	gprintf("\nTheme_Prompt(%s ,%s, %s)", title, author, downloadlink);
+	debughelper_printf("\nTheme_Prompt(%s ,%s, %s)", title, author, downloadlink);
 	bool leave = false;
 	int result = 0;
 

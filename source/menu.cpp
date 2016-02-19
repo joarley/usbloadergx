@@ -29,7 +29,6 @@
 #include "usbloader/MountGamePartition.h"
 #include "mload/mload_modules.h"
 #include "audio.h"
-#include "gecko.h"
 #include "menu.h"
 #include "sys.h"
 #include "wpad.h"

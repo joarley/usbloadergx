@@ -2,7 +2,6 @@
 #include <string.h>
 #include <malloc.h>
 #include <ogcsys.h>
-#include "gecko.h"
 #include "wbfs.h"
 
 /* Constants */
