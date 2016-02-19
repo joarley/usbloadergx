@@ -1,19 +1,25 @@
 #include <network.h>
 #include <ogc/lwp.h>
-#include "wifidebug.h"
 #include <debug.h>
+#include <sys/iosupport.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+
+#include "wifidebug.h"
 
 #define MAX_CLIENTS_WIFI 10
 
 static bool initialized = false;
 static bool server_initialized = false;
-static s32 clients[MAX_CLIENTS_WIFI] = {0};
+static s32 clients[MAX_CLIENTS_WIFI];
 static lwp_t init_server_handler = 0;
 
 static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
 {
+	int i;
 	if(server_initialized && len > 0)
-		for(int i =0; i < MAX_CLIENTS_WIFI;i++)
+		for(i =0; i < MAX_CLIENTS_WIFI;i++)
 			if(clients[i] > 0) {
 				if(net_send(clients[i], ptr, len, 0) < 0){
 					net_close(clients[i]);
@@ -23,10 +29,12 @@ static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len
 	return len;
 }
 
-static void __init_server(void*){
+static void * __init_server(void* args){
 	s32 sock = net_socket (AF_INET, SOCK_STREAM, IPPROTO_IP);
 	struct sockaddr_in client;
 	struct sockaddr_in server;
+
+	memset(clients, 0, MAX_CLIENTS_WIFI);
 
 	if (sock != INVALID_SOCKET) {
 		memset (&server, 0, sizeof (server));
@@ -42,9 +50,13 @@ static void __init_server(void*){
 			if(ret == 0){
 				server_initialized = true;
 				while(true){
-					s32 clientlen;
+					socklen_t clientlen = sizeof(client);;
 					s32 client_sock = net_accept (sock, (struct sockaddr *) &client, &clientlen);
-					for(int i = 0;i < MAX_CLIENTS_WIFI;i++){
+					if(client_sock < 0)
+						continue;
+					net_send(client_sock, "Connected\n", strlen("Connected\n"), 0);
+					int i;
+					for(i = 0;i < MAX_CLIENTS_WIFI;i++){
 						if(clients[i] == 0)
 							clients[i] = client_sock;
 					}
@@ -52,6 +64,7 @@ static void __init_server(void*){
 			}
 		}
 	}
+	return NULL;
 }
 
 void printf_wifidebug(const char *format, ...) {
@@ -64,7 +77,7 @@ void printf_wifidebug(const char *format, ...) {
 	va_start(va, format);
 
 	if((len = vsnprintf(stringBuf, sizeof(stringBuf), format, va)) > 0)
-		__out_write(NULL, NULL, stringBuf, len);
+		__out_write(NULL, 0, stringBuf, len);
 }
 
 bool init_wifidebug(bool waitgdb) {

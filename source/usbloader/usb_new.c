@@ -2,6 +2,7 @@
 #include <ogc\usbstorage.h>
 #include "usb_new.h"
 #include <string.h>
+#include "../debughelper/debughelper.h"
 
 static bool devices_initialized[MAX_USB_STORAGE_DEVICES];
 static usb_device_entry devices[MAX_USB_STORAGE_DEVICES];
@@ -59,6 +60,7 @@ u32 usbstorage_get_sector_size(int port){
 }
 
 int usbstorage_startup(int port) {
+	debughelper_printf("iniciando startup port %d", port);
 	if(!started){
 		if(!usbstorage_init())
 			return -1;
@@ -66,17 +68,26 @@ int usbstorage_startup(int port) {
 			return -2;
 	}
 
-	if(USBStorage_Open(&handles[port], devices[port].device_id, devices[port].vid, devices[port].pid) != USB_OK)
+	s32 ret = USBStorage_Open(&handles[port], devices[port].device_id, devices[port].vid, devices[port].pid);
+	if(ret != USB_OK)
+	{
+		debughelper_printf("error ao abrir porta %d", ret);
 		return -3;
+	}
 
 	u32 sector_num = 0;
-	USBStorage_ReadCapacity(&handles[port], 0, &hdd_sector_size[port], &sector_num);
+	ret = USBStorage_ReadCapacity(&handles[port], 0, &hdd_sector_size[port], &sector_num);
+
+	if(ret < 0){
+		debughelper_printf("error ao verificar tamanho %d", ret);
+	}
 
 	devices_initialized[port] = true;
 	return 1;
 }
 
 u32 usbstorage_get_capacity(int port) {
+	debughelper_printf("iniciando get_capacity %d", port);
 	if(!devices_initialized[port])
 		return 0;
 
@@ -88,6 +99,7 @@ u32 usbstorage_get_capacity(int port) {
 }
 
 bool usbstorage_is_inserted(int port) {
+	debughelper_printf("iniciando is inserted %d", port);
 	if(!devices_initialized[port])
 		return false;
 
@@ -95,15 +107,21 @@ bool usbstorage_is_inserted(int port) {
 }
 
 bool usbstorage_read_sectors(int port, u32 sector, u32 numSectors, void *buffer) {
+	debughelper_printf("Iniciando leitura porta(%d) %d sector %d numSectos %d",
+		devices_initialized[port], port, sector, numSectors);
 	if(!devices_initialized[port])
 		return false;
 
-	if(USBStorage_Read(&handles[port], 0, sector, numSectors, buffer) != USB_OK)
+	s32 readResult = USBStorage_Read(&handles[port], 0, sector, numSectors, buffer);
+	debughelper_printf("resultado leitura %d", port);
+
+	if(readResult != USB_OK)
 		return false;
 	return true;
 }
 
 bool usbstorage_write_sectors(int port, u32 sector, u32 numSectors, const void *buffer) {
+	debughelper_printf("iniciando write sectors porta %d", port);
 	if(!devices_initialized[port])
 		return false;
 
@@ -113,6 +131,7 @@ bool usbstorage_write_sectors(int port, u32 sector, u32 numSectors, const void *
 }
 
 bool usbstorage_shutdown(int port) {
+	debughelper_printf("iniciando shutdown porta %d", port);
 	if(devices_initialized[port])
 		USBStorage_Close(&handles[port]);
 

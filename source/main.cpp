@@ -44,10 +44,8 @@ int main(int argc, char *argv[])
 	// video frame buffers must be in mem1
 	MEM2_init(48);
 
-
 	debughelper_init();
 	debughelper_redirect_output();
-		_break();
 
 	NandTitles.Get();
 	setlocale(LC_ALL, "en.UTF-8");

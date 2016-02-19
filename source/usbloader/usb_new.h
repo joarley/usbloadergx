@@ -37,7 +37,7 @@ const DISC_INTERFACE * usbstorage_get_disc_interface(int port);
 int usbstorage_startup(int port);
 u32 usbstorage_get_capacity(int port);
 bool usbstorage_is_inserted(int port);
-int usbstorage_read_sectors(int port, u32 sector, u32 numSectors, void *buffer);
+bool usbstorage_read_sectors(int port, u32 sector, u32 numSectors, void *buffer);
 bool usbstorage_write_sectors(int port, u32 sector, u32 numSectors, const void *buffer);
 bool usbstorage_shutdown(int port);
 bool usbstorage_clear_status(int port);

@@ -158,7 +158,6 @@ void StartUpProcess::SetTextf(const char * format, ...)
 	if((vasprintf(&tmp, format, va) >= 0) && tmp)
 	{
 		TextFade(-40);
-		debughelper_printf(tmp);
 		messageTxt->SetText(tmp);
 		TextFade(40);
 	}
@@ -179,28 +178,21 @@ bool StartUpProcess::USBSpinUp()
 	do
 	{
 		usbstorage_deinit();
-		messageTxt->SetTextf("Iniciando USB");
-		Draw();
-		sleep(1);
+		debughelper_printf("Iniciando USB");
 		if(usbstorage_init())
-			messageTxt->SetTextf("USB Iniciado com sucesso");
+			debughelper_printf("USB Iniciado com sucesso");
 		else
-			messageTxt->SetTextf("Erro ao iniciar USB");
-		Draw();
-		sleep(2);
+			debughelper_printf("Erro ao iniciar USB");
 
 		int numDevices = usbstorage_get_num_devices();
 
-		messageTxt->SetTextf("Encontrados %d devices", numDevices);
-		Draw();
-		sleep(2);
+		debughelper_printf("Encontrados %d devices", numDevices);
 
 		for(int i = 0; i < numDevices; i++){
 			bool portStarted1 = DeviceHandler::Instance()->GetInterfaceUSB(i)->startup();
 			bool portStarted2 = DeviceHandler::Instance()->GetInterfaceUSB(i)->isInserted();
-			messageTxt->SetTextf("Porta %d não iniciada %d %d", i, portStarted1, portStarted2);
-			Draw();
-			sleep(1);
+			debughelper_printf("Porta %d não iniciada %d %d", i, portStarted1, portStarted2);
+
 			if(portStarted1 && portStarted2)
 				started = true;
 		}
@@ -217,7 +209,7 @@ bool StartUpProcess::USBSpinUp()
 
 		messageTxt->SetTextf("Waiting for HDD: %i sec left\n", 20-(int)countDown.elapsed());
 		Draw();
-		sleep(2);
+		sleep(1);
 	}
 	while(countDown.elapsed() < 20.f);
 
@@ -243,12 +235,6 @@ int StartUpProcess::Execute()
 {
 	Settings.EntryIOS = IOS_GetVersion();
 
-	// Reload app cios if needed
-	SetTextf("Loading application cIOS %s\n", Settings.UseArgumentIOS ? "requested in meta.xml" : "");
-	//if(IosLoader::LoadAppCios() < 0)
-	//{
-	//	SetTextf("Failed loading any cIOS. Trying with IOS58 + AHB access...");
-
 	// We can allow now operation without cIOS in channel mode with AHB access
 	if(!AHBPROT_DISABLED || (AHBPROT_DISABLED && IOS_GetVersion() != 58))
 	{
@@ -260,9 +246,8 @@ int StartUpProcess::Execute()
 	{
 		Settings.LoaderIOS = 58;
 		SetTextf("Running on IOS 58. Wii disc based games and some channels will not work.");
-		sleep(5);
+		sleep(1);
 	}
-	//}
 
 	if(!AHBPROT_DISABLED && IOS_GetVersion() < 200)
 	{
