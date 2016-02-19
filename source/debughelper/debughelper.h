@@ -28,19 +28,22 @@ void __debughelper_hexdump(void *d, int len);
 #else
 	bool __return_true();
 	#define debughelper_init() __return_true()
+	#define debughelper_deinit() do{}while(false)
 	#define debughelper_printf(...) do{}while(false)
-	#define debughelper_hexdump(...)  do{}while(false)
-	#define debughelper_redirect_output()  do{}while(false)
+	#define debughelper_hexdump(...) do{}while(false)
+	#define debughelper_redirect_output() do{}while(false)
 #endif
 
 #ifdef DEBUG_GECKO
 	#define debughelper_printf(...) printf_gecko(__VA_ARGS__)
 	#define debughelper_init() __debughelper_init(false)
+	#define debughelper_deinit() do{}while(false)
 	#define debughelper_hexdump(...) __debughelper_hexdump(__VA_ARGS__)
 	#define debughelper_redirect_output() redirect_output_gecko()
 #elif DEBUG_WIFI
 	#define debughelper_printf(...) printf_wifidebug(__VA_ARGS__)
 	#define debughelper_init() __debughelper_init(DEBUG_WAIT_GDB)
+	#define debughelper_deinit() debughelper_deinit_wifidebug()
 	#define debughelper_hexdump(...) __debughelper_hexdump(__VA_ARGS__)
 	#define debughelper_redirect_output() redirect_output_wifidebug()
 #endif
