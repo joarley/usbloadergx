@@ -239,6 +239,8 @@ int StartUpProcess::Execute()
 
 	if(IosLoader::LoadAppCios() < 0)
 	{
+		SetTextf("Failed loading any cIOS. Trying with IOS58 + AHB access...");
+
 		// We can allow now operation without cIOS in channel mode with AHB access
 		if(!AHBPROT_DISABLED || (AHBPROT_DISABLED && IOS_GetVersion() != 58))
 		{
