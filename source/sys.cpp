@@ -102,6 +102,7 @@ void AppCleanUp(void)
 	ThreadedTask::DestroyInstance();
 	SoundHandler::DestroyInstance();
 	GCGames::DestroyInstance();
+	debughelper_deinit();
 	DeinitNetwork();
 	GameTitles.SetDefault();
 
