@@ -25,6 +25,7 @@
 #include "utils/tools.h"
 #include "sys.h"
 #include "svnrev.h"
+#include <debug.h>
 
 StartUpProcess::StartUpProcess()
 {
@@ -159,6 +160,7 @@ void StartUpProcess::SetTextf(const char * format, ...)
 	{
 		TextFade(-40);
 		messageTxt->SetText(tmp);
+		debughelper_printf(tmp);
 		TextFade(40);
 	}
 	va_end(va);
@@ -191,7 +193,7 @@ bool StartUpProcess::USBSpinUp()
 		for(int i = 0; i < numDevices; i++){
 			bool portStarted1 = DeviceHandler::Instance()->GetInterfaceUSB(i)->startup();
 			bool portStarted2 = DeviceHandler::Instance()->GetInterfaceUSB(i)->isInserted();
-			debughelper_printf("Porta %d não iniciada %d %d", i, portStarted1, portStarted2);
+			debughelper_printf("Porta %d iniciada com resultado %d %d", i, portStarted1, portStarted2);
 
 			if(portStarted1 && portStarted2)
 				started = true;
@@ -235,30 +237,31 @@ int StartUpProcess::Execute()
 {
 	Settings.EntryIOS = IOS_GetVersion();
 
-	// We can allow now operation without cIOS in channel mode with AHB access
-	if(!AHBPROT_DISABLED || (AHBPROT_DISABLED && IOS_GetVersion() != 58))
+	if(IosLoader::LoadAppCios() < 0)
 	{
-		SetTextf("Failed loading IOS 58. USB Loader GX requires a cIOS or IOS 58 with AHB access. Exiting...\n");
-		sleep(5);
-		Sys_BackToLoader();
-	}
-	else
-	{
-		Settings.LoaderIOS = 58;
-		SetTextf("Running on IOS 58. Wii disc based games and some channels will not work.");
-		sleep(1);
+		// We can allow now operation without cIOS in channel mode with AHB access
+		if(!AHBPROT_DISABLED || (AHBPROT_DISABLED && IOS_GetVersion() != 58))
+		{
+			SetTextf("Failed loading IOS 58. USB Loader GX requires a cIOS or IOS 58 with AHB access. Exiting...\n");
+			sleep(5);
+			Sys_BackToLoader();
+		}
+		else
+		{
+			Settings.LoaderIOS = 58;
+			SetTextf("Running on IOS 58. Wii disc based games and some channels will not work.");
+			sleep(1);
+		}
 	}
 
 	if(!AHBPROT_DISABLED && IOS_GetVersion() < 200)
 	{
-		SetTextf("Failed loading IOS %i. USB Loader GX requires a cIOS or IOS58 with AHB access. Exiting...\n", IOS_GetVersion());
+		SetTextf("Failed loading IOS %i. USB Loader GX requires IOS58 with AHB access. Exiting...\n", IOS_GetVersion());
 		sleep(5);
 		Sys_BackToLoader();
 	}
 
 	SetTextf("Using %sIOS %i\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
-
-
 	SetupPads();
 
 	SetTextf("Initialize sd card\n");
@@ -268,34 +271,9 @@ int StartUpProcess::Execute()
 	{
 		SetTextf("Initialize usb device\n");
 		USBSpinUp();
-		int count = DeviceHandler::Instance()->MountUSB(0);
-		SetTextf("Montado %d devices USB\n", count, usbstorage_get_num_devices());
-		Draw();
-		sleep(3);
-		MASTER_BOOT_RECORD *mbr = (MASTER_BOOT_RECORD *) malloc(MAX_BYTES_PER_SECTOR);
-		int rr = usbstorage_startup(0);
-		if (rr < 0)
-		{
-			SetTextf("Error ao iniciar startup %d\n", rr);
-			Draw();
-			sleep(5);
-		}
-		rr = usbstorage_read_sectors(0, 0, 1, mbr);
-		if (rr < 0)
-		{
-			free(mbr);
-			SetTextf("Error ao ler mbr %d\n", rr);
-		}else{
-			SetTextf("MBR-->%d\n", mbr->signature);
-			free(mbr);
-		}
-
-		Draw();
-		sleep(5);
-		count = DeviceHandler::Instance()->GetTotalPartitionCount();
+		DeviceHandler::Instance()->MountAllUSB();
+		int count = DeviceHandler::Instance()->GetTotalPartitionCount();
 		SetTextf("Total de %d partições\n", count);
-		Draw();
-		sleep(3);
 	}
 
 	SetTextf("Loading config files\n");

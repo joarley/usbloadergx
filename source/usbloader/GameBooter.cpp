@@ -198,23 +198,23 @@ int GameBooter::SetupDisc(struct discHdr &gameHeader)
 	{
 		debughelper_printf("Disc_SetUSB...");
 		ret = Disc_SetUSB(gameHeader.id);
-		debughelper_printf("%d\n", ret);
+		debughelper_printf("Disc_SetUSB %d", ret);
 		if(ret < 0) return ret;
 	}
 	else
 	{
 		debughelper_printf("Loading fragment list...");
 		ret = get_frag_list(gameHeader.id);
-		debughelper_printf("%d\n", ret);
+		debughelper_printf("Fragment list result: %d", ret);
 		if(ret < 0) return ret;
 		ret = set_frag_list(gameHeader.id);
 		if(ret < 0) return ret;
-		debughelper_printf("\tUSB set to game\n");
+		debughelper_printf("USB set to game");
 	}
 
 	debughelper_printf("Disc_Open()...");
 	ret = Disc_Open();
-	debughelper_printf("%d\n", ret);
+	debughelper_printf("Disc_Open: %d", ret);
 
 	return ret;
 }
@@ -244,8 +244,12 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	if(Settings.Wiinnertag)
 		Wiinnertag::TagGame((const char *) gameHeader.id);
 
+	debughelper_printf("\tBootGame: %d\n", __LINE__);
+
 	if(gameHeader.type == TYPE_GAME_GC_IMG || gameHeader.type == TYPE_GAME_GC_DISC  || gameHdr->type == TYPE_GAME_GC_EXTRACTED)
 		return BootGCMode(&gameHeader);
+
+	debughelper_printf("\tBootGame: %d\n", __LINE__);
 
 	//! Setup game configuration from game settings. If no game settings exist use global/default.
 	GameCFG * game_cfg = GameSettings.GetGameCFG(gameHeader.id);
@@ -273,12 +277,16 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	{
 		NandEmuMode = game_cfg->NandEmuMode == INHERIT ? Settings.NandEmuChanMode : game_cfg->NandEmuMode;
 		NandEmuPath = game_cfg->NandEmuPath.size() == 0 ? Settings.NandEmuChanPath : game_cfg->NandEmuPath.c_str();
+		debughelper_printf("\tBootGame: %d\n", __LINE__);
 	}
 
 	// boot neek for Wii games and EmuNAND channels only
-	if(NandEmuMode == EMUNAND_NEEK && (gameHeader.type == TYPE_GAME_WII_IMG || gameHeader.type == TYPE_GAME_EMUNANDCHAN))
+	if(NandEmuMode == EMUNAND_NEEK && (gameHeader.type == TYPE_GAME_WII_IMG || gameHeader.type == TYPE_GAME_EMUNANDCHAN)){
+		debughelper_printf("\tBootGame: %d\n", __LINE__);
 		return BootNeek(&gameHeader);
+	}
 
+	debughelper_printf("BootGame: %d", __LINE__);
 	AppCleanUp();
 
 	debughelper_printf("\tSettings.partition: %d\n", Settings.partition);
@@ -288,22 +296,26 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 	//! Remember game's USB port
 	int partition = gameList.GetPartitionNumber(gameHeader.id);
 	int usbport = DeviceHandler::Instance()->PartitionToPortUSB(partition);
+	debughelper_printf("partition: %d\n", partition);
+	debughelper_printf("usbport: %d\n", usbport);
 
 	//! Prepare alternate dol settings
 	SetupAltDOL(gameHeader.id, alternatedol, alternatedoloffset);
+	debughelper_printf("BootGame: %d", __LINE__);
 
 	//! Reload game settings cIOS for this game
-	if(iosChoice != IOS_GetVersion())
-	{
-		debughelper_printf("Reloading into game cIOS: %i...\n", iosChoice);
-		IosLoader::LoadGameCios(iosChoice);
-		if(MountGamePartition(false) < 0)
-			return -1;
-	}
+	//if(iosChoice != IOS_GetVersion())
+	//{
+		//debughelper_printf("Reloading into game cIOS: %i...\n", iosChoice);
+		//IosLoader::LoadGameCios(iosChoice);
+		//if(MountGamePartition(false) < 0)
+			//return -1;
+	//}
 
 	//! Modify Wii Message Board to display the game starting here (before Nand Emu)
 	if(Settings.PlaylogUpdate)
 	{
+		debughelper_printf("BootGame: %d", __LINE__);
 		// enable isfs permission if using IOS+AHB or Hermes v4
 		if(IOS_GetVersion() < 200 || (IosLoader::IsHermesIOS() && IOS_GetRevision() == 4))
 		{
@@ -312,12 +324,16 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 				debughelper_printf("Patching %sIOS%d failed!\n", IOS_GetVersion() >= 200 ? "c" : "", IOS_GetVersion());
 		}
 
+		debughelper_printf("BootGame: %d", __LINE__);
 		BNRInstance::Instance()->Load(&gameHeader);
 		Playlog_Update((char *) gameHeader.id, BNRInstance::Instance()->GetIMETTitle(CONF_GetLanguage()));
+		debughelper_printf("BootGame: %d", __LINE__);
 	}
 
 	//! Load wip codes
+	debughelper_printf("BootGame: %d", __LINE__);
 	load_wip_code(gameHeader.id);
+	debughelper_printf("BootGame: %d", __LINE__);
 
 	// force hooktype if not selected but Ocarina is enabled
 	if(ocarinaChoice && Hooktype == OFF)
@@ -332,15 +348,22 @@ int GameBooter::BootGame(struct discHdr *gameHdr)
 		LoadGameConfig(Settings.Cheatcodespath);
 
 	//! Setup NAND emulation
+	debughelper_printf("BootGame: %d", __LINE__);
 	SetupNandEmu(NandEmuMode, NandEmuPath, gameHeader);
+	debughelper_printf("BootGame: %d", __LINE__);
 
 	//! Setup disc stuff if we load a game
 	if(gameHeader.tid == 0)
 	{
+		debughelper_printf("BootGame: %d", iosChoice);
+		IosLoader::LoadGameCios(iosChoice);
+		debughelper_printf("BootGame: %d", __LINE__);
 		//! Setup disc in cIOS and open it
 		ret = SetupDisc(gameHeader);
+		debughelper_printf("BootGame: %d", __LINE__);
 		if (ret < 0)
 			Sys_BackToLoader();
+		debughelper_printf("BootGame: %d", __LINE__);
 
 		//! Load BCA data for the game
 		debughelper_printf("Loading BCA data...");

@@ -1334,6 +1334,7 @@ int GameBrowseMenu::MainLoop()
 
 	else if (Settings.gameDisplay == LIST_MODE && GetSelectedGame() != gameSelectedOld)
 	{
+		debug_printf("Game changed: %d", GetSelectedGame());
 		gameSelectedOld = GetSelectedGame();
 		int gameSelected = gameSelectedOld;
 		if(gameSelected >= 0 && gameSelected < (s32) gameList.size())
@@ -1352,6 +1353,7 @@ int GameBrowseMenu::MainLoop()
 	}
 
 	gameClicked = gameBrowser ? gameBrowser->GetClickedOption() : -1;
+	debug_printf("Game click: %d", gameClicked);
 
 	if(gameClicked >= 0 && gameClicked < (s32) gameList.size())
 		OpenClickedGame(gameList[gameClicked]);

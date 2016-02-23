@@ -235,12 +235,17 @@ bool PartitionHandle::IsExisting(u64 lba)
 
 int PartitionHandle::FindPartitions()
 {
+	printf("Pesquisando partições");
 	MASTER_BOOT_RECORD *mbr = (MASTER_BOOT_RECORD *) malloc(MAX_BYTES_PER_SECTOR);
-	if(!mbr) return -1;
+	if(!mbr){
+		printf("Erro ao alocar MBR");
+		return -1;
+	}
 
 	// Read the first sector on the device
 	if (!interface->readSectors(0, 1, mbr))
 	{
+		printf("Erro ao ler MBR");
 		free(mbr);
 		return -1;
 	}
@@ -248,6 +253,7 @@ int PartitionHandle::FindPartitions()
 	// If this is not the device's master boot record
 	if (mbr->signature != MBR_SIGNATURE && mbr->signature != MBR_SIGNATURE_MOD)
 	{
+		printf("Não existe no disco MBR");
 		// Check if the device has only one WBFS partition without a table.
 		wbfs_head_t *head = (wbfs_head_t *) mbr;
 		if (head->magic == wbfs_htonl(WBFS_MAGIC))
@@ -267,6 +273,7 @@ int PartitionHandle::FindPartitions()
 
 		if(partition->type == PARTITION_TYPE_GPT)
 		{
+			printf("Encontrado partição PARTITION_TYPE_GPT no disco");
 			int ret = CheckGPT(i);
 			if(ret == 0) // if it's a GPT we don't need to go on looking through the mbr anymore
 				return ret;
@@ -274,12 +281,14 @@ int PartitionHandle::FindPartitions()
 
 		if(partition->type == PARTITION_TYPE_DOS33_EXTENDED || partition->type == PARTITION_TYPE_WIN95_EXTENDED)
 		{
+			printf("Encontrado partição PARTITION_TYPE_DOS33_EXTENDED no disco");
 			CheckEBR(i, le32(partition->lba_start));
 			continue;
 		}
 
 		if(le32(partition->block_count) > 0 && !IsExisting(le32(partition->lba_start)))
 		{
+			printf("Encontrado partição block no disco");
 			AddPartition(PartFromType(partition->type), le32(partition->lba_start),
 									  le32(partition->block_count), (partition->status == PARTITION_BOOTABLE),
 									  partition->type, i, MBR);

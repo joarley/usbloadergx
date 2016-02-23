@@ -1,7 +1,9 @@
 #include <stdio.h>
-#include <ogcsys.h>
 #include <string.h>
 #include <malloc.h>
+#include <stdarg.h>
+
+#include <ogcsys.h>
 
 #include "apploader.h"
 #include "wdvd.h"
@@ -13,6 +15,7 @@
 #include "patches/gamepatches.h"
 #include "patches/wip.h"
 #include "settings/SettingsEnums.h"
+
 
 /* Apploader function pointers */
 typedef int (*app_main)(void **dst, int *size, int *offset);
@@ -28,6 +31,13 @@ static u8 *appldr = (u8 *) 0x81200000;
 
 /* Variables */
 static u32 buffer[0x20] ATTRIBUTE_ALIGN( 32 );
+
+void __printf(const char* format, ...){
+	va_list va;
+	va_start(va, format);
+
+	vprintf(format, va);
+}
 
 s32 Apploader_Run(entry_point *entry, char * dolpath, u8 alternatedol, u32 alternatedoloffset)
 {
@@ -58,7 +68,7 @@ s32 Apploader_Run(entry_point *entry, char * dolpath, u8 alternatedol, u32 alter
 	appldr_entry(&appldr_init, &appldr_main, &appldr_final);
 
 	/* Initialize apploader */
-	appldr_init(printf);
+	appldr_init(__printf);
 
 	for (;;)
 	{

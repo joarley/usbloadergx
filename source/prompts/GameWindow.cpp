@@ -22,6 +22,7 @@
 #include "banner/OpeningBNR.hpp"
 #include "utils/ShowError.h"
 #include "utils/tools.h"
+#include "../debughelper/debughelper.h"
 
 #define NONE		0
 #define LEFT		1
@@ -559,6 +560,7 @@ int GameWindow::MainLoop()
 
 	if (gameBtn->GetState() == STATE_CLICKED)
 	{
+		debughelper_printf("Hide the window");
 		// Hide the window
 		Hide();
 
@@ -725,6 +727,7 @@ int GameWindow::MainLoop()
 
 void GameWindow::BootGame(struct discHdr *header)
 {
+	debughelper_printf("BootGame: %.6s\n", header->id);
 	wiilight(0);
 
 	GameCFG* game_cfg = GameSettings.GetGameCFG(header->id);
@@ -802,6 +805,7 @@ void GameWindow::BootGame(struct discHdr *header)
 	GameStatistics.Save();
 
 	//Just calling that shuts down everything and starts game
+	debughelper_printf("booting game: %.6s\n", header->id);
 	int ret = GameBooter::BootGame(header);
 	
 	//If the launch is canceled, reduce playCount

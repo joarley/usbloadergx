@@ -10,9 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wiiuse/wpad.h>
+#include <unistd.h>
 #include <sys/dir.h>
 #include <ogcsys.h>
-#include <unistd.h>
 #include <locale.h>
 #include <wiiuse/wpad.h>
 #include <di/di.h>
@@ -30,12 +31,15 @@
 
 extern "C"
 {
-	extern s32 MagicPatches(s32);
-	void __exception_setreload(int t);
+extern s32 MagicPatches(s32);
+void __exception_setreload(int t);
 }
 
 int main(int argc, char *argv[])
 {
+	debughelper_init();
+	debughelper_redirect_output();
+
 	__exception_setreload(20);
 	// activate magic access rights
 	MagicPatches(1);
@@ -43,9 +47,6 @@ int main(int argc, char *argv[])
 	InitVideo();
 	// video frame buffers must be in mem1
 	MEM2_init(48);
-
-	debughelper_init();
-	debughelper_redirect_output();
 
 	NandTitles.Get();
 	setlocale(LC_ALL, "en.UTF-8");

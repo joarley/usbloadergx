@@ -29,6 +29,7 @@
 #include "language/gettext.h"
 #include "menu/menus.h"
 #include "utils/tools.h"
+#include "../debughelper/debughelper.h"
 
 // Load only once
 BannerFrame BannerWindow::bannerFrame;
@@ -421,6 +422,7 @@ int BannerWindow::MainLoop()
 {
 	if (startBtn->GetState() == STATE_CLICKED)
 	{
+		debughelper_printf("Started : %.6s\n", gameList[gameSelected]->id);
 		// If this function was left then the game start was canceled
 		GameWindow::BootGame(dvdheader ? dvdheader : gameList[gameSelected]);
 		// If it returns from that function reload the list

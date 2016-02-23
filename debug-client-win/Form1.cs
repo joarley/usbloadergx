@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DebugOutput.Properties;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -25,6 +26,9 @@ namespace DebugOutput
             stop.Enabled = false;
             textBox1.Enabled = true;
 
+            if (!string.IsNullOrEmpty(Settings.Default.LastIp))
+                textBox1.Text = Settings.Default.LastIp;
+
             Task.Run(Main);
         }
 
@@ -39,23 +43,28 @@ namespace DebugOutput
 
         private Task Main()
         {
-            TcpClient client;
+            TcpClient client = null;
 
             while (true)
             {
-                Invoke(new Action(() => { label1.Text = "Desconnected"; label1.ForeColor = Color.Red; }));
-
-                if (start.Enabled)
-                {
-                    Thread.Sleep(500);
-                    continue;
-                }
-
                 try
                 {
+                    Invoke(new Action(() => { label1.Text = "Desconnected"; label1.ForeColor = Color.Red; }));
+
+                    if (start.Enabled)
+                    {
+                        Thread.Sleep(500);
+                        continue;
+                    }
+
+
+                    if (client != null)
+                        client.Close();
+
                     var ip = textBox1.Text.Split(':')[0];
                     var port = int.Parse(textBox1.Text.Split(':')[1]);
                     client = new TcpClient();
+                    client.NoDelay = true;
                     var taskConnect = client.ConnectAsync(ip, port);
                     taskConnect.Wait(2000);
                     if (!client.Connected)
@@ -73,20 +82,19 @@ namespace DebugOutput
                     {
                         var stream = client.GetStream();
 
-                        if (!stream.DataAvailable)
-                        {
-                            Thread.Sleep(300);
-                            continue;
-                        }
-
                         byte[] buffer = new byte[5000];
 
-                        stream.Read(buffer, 0, buffer.Length);
+                        var readTask = stream.ReadAsync(buffer, 0, buffer.Length);
+                        if (!readTask.Wait(2000))
+                            continue;
 
-                        var dataReceived = Encoding.UTF8.GetString(buffer);
+                        if (readTask.Result == 0)
+                            break;
+
+                        var dataReceived = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
                         var piecesReceived = dataReceived.Split(new[] { "%&_" }, StringSplitOptions.None);
 
-                        if (!piecesReceived.Any())
+                        if (string.IsNullOrEmpty(dataReceived) || !piecesReceived.Any())
                         {
                             Thread.Sleep(300);
                             continue;
@@ -142,7 +150,8 @@ namespace DebugOutput
             string idMessage = dataPieces[1];
             string workingMessage = dataPieces[2];
 
-            Invoke(new Action(()=> {
+            Invoke(new Action(() =>
+            {
                 listBox1.Items.Add(idMessage + "- " + workingMessage);
                 if (checkBox1.Checked)
                     listBox1.SelectedIndex = listBox1.Items.Count - 1;
@@ -161,6 +170,8 @@ namespace DebugOutput
             start.Enabled = false;
             stop.Enabled = true;
             textBox1.Enabled = false;
+            Settings.Default.LastIp = textBox1.Text;
+            Settings.Default.Save();
         }
 
         private void button1_Click(object sender, EventArgs e)

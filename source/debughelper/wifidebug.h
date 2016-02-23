@@ -1,6 +1,8 @@
 #ifndef SOURCE_WIFI_DEBUG_H_
 #define SOURCE_WIFI_DEBUG_H_
 
+#include <gccore.h>
+
 #ifdef __cplusplus
 extern "C"
 {
