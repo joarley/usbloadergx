@@ -1,30 +1,39 @@
-#include <network.h>
-#include <ogc/lwp.h>
-#include <debug.h>
-#include <sys/iosupport.h>
+#include "wifidebug.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <inttypes.h>
 
-#include "wifidebug.h"
+#include <network.h>
+#include <ogc/lwp.h>
+#include <ogc/consol.h>
+#include <debug.h>
+#include <sys/iosupport.h>
 
-#define MAX_CLIENTS_WIFI 10
+#define MAX_CLIENTS 10
+#define SERVER_MESSAGE_SEPARATOR "%%&_"
 
 static bool initialized = false;
-static bool server_initialized = false;
-static s32 clients[MAX_CLIENTS_WIFI];
-static lwp_t init_server_handler = 0;
-s32 server_sock = 0;
+static bool serverInitialized = false;
+static s32 clientSockets[MAX_CLIENTS];
+static lwp_t serverThreadHandler = 0;
+static s32 listemSock = 0;
 static u64 lastMessageId = -1;
 
-static bool __sendto(s32 sock, const char* ptr, len){
+static bool __sendto_socket(s32 sock, const char* ptr, size_t len){
 	char message[5000];
-	snprintf(message, sizeof(message), "INIT%%&_%d%%&_%.*s%%&_END", ++lastMessageId, len, ptr);
+	snprintf(message, sizeof(message),
+		"INIT"SERVER_MESSAGE_SEPARATOR
+		"%llu"SERVER_MESSAGE_SEPARATOR
+		"%.*s"SERVER_MESSAGE_SEPARATOR
+		"END"SERVER_MESSAGE_SEPARATOR, ++lastMessageId, len, ptr);
 	size_t messageLen = strlen(message);
 	s32 sended = 0;
 
-	while(sended < len) {
-		s32 ret = net_send(sock, message, len, 0);
+	while((u32)sended < messageLen) {
+		s32 ret = net_send(sock, message + sended, messageLen - sended, 0);
 		if(ret < 0){
 			return false;
 		} else if(ret == 0){
@@ -37,57 +46,58 @@ static bool __sendto(s32 sock, const char* ptr, len){
 	return true;
 }
 
-static ssize_t __out_write(struct _reent *r, int fd, const char *ptr, size_t len)
+static ssize_t __write_to_all_clients(struct _reent *r, int fd, const char *ptr, size_t len)
 {
 	int i;
-	if(server_initialized && len > 0)
-		for(i =0; i < MAX_CLIENTS_WIFI;i++)
-			if(clients[i] > 0)
-				if(!__sendto(clients[i], ptr, len)){
-					net_close(clients[i]);
-					clients[i] = 0;
+	if(serverInitialized && len > 0)
+		for(i =0; i < MAX_CLIENTS;i++)
+			if(clientSockets[i] > 0)
+				if(!__sendto_socket(clientSockets[i], ptr, len)){
+					net_close(clientSockets[i]);
+					clientSockets[i] = 0;
 					break;
 				}
 	return len;
 }
 
-static void * __init_server(void* args){
-	server_sock = net_socket (AF_INET, SOCK_STREAM, IPPROTO_IP);
-	struct sockaddr_in client;
-	struct sockaddr_in server;
+static void * __remote_print_server(void* args){
+	listemSock = net_socket (AF_INET, SOCK_STREAM, IPPROTO_IP);
+	struct sockaddr_in clientAddr;
+	struct sockaddr_in serverAddr;
 
-	memset(clients, 0, MAX_CLIENTS_WIFI);
+	memset(clientSockets, 0, MAX_CLIENTS);
 
-	if (server_sock != INVALID_SOCKET) {
-		memset (&server, 0, sizeof (server));
-		memset (&client, 0, sizeof (client));
+	if (listemSock != INVALID_SOCKET) {
+		memset (&serverAddr, 0, sizeof (serverAddr));
+		memset (&clientAddr, 0, sizeof (clientAddr));
 
-		server.sin_family = AF_INET;
-		server.sin_port = htons (1808);
-		server.sin_addr.s_addr = INADDR_ANY;
-		s32 ret = net_bind(server_sock, (struct sockaddr *) &server, sizeof (server));
+		serverAddr.sin_family = AF_INET;
+		serverAddr.sin_port = htons (1808);
+		serverAddr.sin_addr.s_addr = INADDR_ANY;
+		s32 ret = net_bind(listemSock, (struct sockaddr *) &serverAddr, sizeof (serverAddr));
 
 		if(ret == 0){
-			ret = net_listen(server_sock, 5);
+			ret = net_listen(listemSock, 5);
 			if(ret == 0){
-				server_initialized = true;
-				while(server_initialized){
-					socklen_t clientlen = sizeof(client);;
-					s32 client_sock = net_accept (server_sock, (struct sockaddr *) &client, &clientlen);
-					if(client_sock < 0)
+				serverInitialized = true;
+				while(serverInitialized){
+					socklen_t addrClientlen = sizeof(clientAddr);;
+					s32 clientSocket = net_accept(listemSock, (struct sockaddr *) &clientAddr, &addrClientlen);
+					if(clientSocket <= 0)
 						continue;
-					if(__sendto(client_sock, "Connected", strlen("Connected")))
+					if(__sendto_socket(clientSocket, "Connected", strlen("Connected")))
 					{
 						int i;
-						for(i = 0;i < MAX_CLIENTS_WIFI;i++){
-							if(clients[i] == 0){
-								clients[i] = client_sock;
-								continue;
+						for(i = 0;i < MAX_CLIENTS;i++){
+							if(clientSockets[i] == 0){
+								clientSockets[i] = clientSocket;
+								break;
 							}
 						}
-					}
-
-					net_close(client_sock);
+						if(i == MAX_CLIENTS)
+							net_close(clientSocket);
+					} else
+						net_close(clientSocket);
 				}
 			}
 		}
@@ -96,7 +106,7 @@ static void * __init_server(void* args){
 }
 
 void printf_wifidebug(const char *format, ...) {
-	if(!server_initialized)
+	if(!serverInitialized)
 		return;
 
 	static char stringBuf[4096];
@@ -105,7 +115,7 @@ void printf_wifidebug(const char *format, ...) {
 	va_start(va, format);
 
 	if((len = vsnprintf(stringBuf, sizeof(stringBuf), format, va)) > 0)
-		__out_write(NULL, 0, stringBuf, len);
+		__write_to_all_clients(NULL, 0, stringBuf, len);
 }
 
 bool init_wifidebug(bool waitgdb) {
@@ -115,8 +125,8 @@ bool init_wifidebug(bool waitgdb) {
 	initialized = if_config(ip, NULL, NULL, true) >= 0;
 	if(initialized) {
 		DEBUG_Init(100, 5656);
-		LWP_CreateThread(&init_server_handler,
-				__init_server, NULL, NULL, 16*1024, 50);
+		LWP_CreateThread(&serverThreadHandler,
+				__remote_print_server, NULL, NULL, 16*1024, 50);
 		if(waitgdb)
 			_break();
 	}
@@ -124,9 +134,14 @@ bool init_wifidebug(bool waitgdb) {
 }
 
 void debughelper_deinit_wifidebug(){
+	printf_wifidebug("Stopping debug over wifi");
 	initialized = false;
-	server_initialized = false;
-	net_close(server_sock);
+	serverInitialized = false;
+	net_close(listemSock);
+}
+
+int __console_write_(struct _reent *r,int fd,const char *ptr,size_t len){
+	return __write_to_all_clients(r, fd, ptr, len);
 }
 
 static const devoptab_t wifi_out = {
@@ -134,7 +149,7 @@ static const devoptab_t wifi_out = {
 		0,			// size of file structure
 		NULL,		// device open
 		NULL,		// device close
-		__out_write,// device write
+		__console_write_,//__write_to_all_clients,// device write
 		NULL,		// device read
 		NULL,		// device seek
 		NULL,		// device fstat
@@ -160,4 +175,7 @@ static const devoptab_t wifi_out = {
 void redirect_output_wifidebug() {
 	devoptab_list[STD_OUT] = &wifi_out;
 	devoptab_list[STD_ERR] = &wifi_out;
+
+	setvbuf(stdout, (char*)NULL, _IONBF, 0);
+	setvbuf(stderr, (char*)NULL, _IONBF, 0);
 }

@@ -59,10 +59,10 @@ s32 Wbfs_Fat::Open()
 	if(partition < (u32) DeviceHandler::Instance()->GetTotalPartitionCount())
 	{
 		PartitionHandle *usbHandle = DeviceHandler::Instance()->GetHandleFromPartition(partition);
-		int portPart = DeviceHandler::Instance()->PartitionToPortUSB(partition);
-		if (lba == usbHandle->GetLBAStart(portPart))
+		int posPart = usbHandle->GetPartitionPos(DeviceHandler::Instance()->GetPartitionPrefix(partition));
+		if (lba == usbHandle->GetLBAStart(posPart))
 		{
-			snprintf(wbfs_fs_drive, sizeof(wbfs_fs_drive), "%s:", usbHandle->MountName(portPart));
+			snprintf(wbfs_fs_drive, sizeof(wbfs_fs_drive), "%s:", usbHandle->MountName(posPart));
 			return 0;
 		}
 	}

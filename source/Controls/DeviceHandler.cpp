@@ -73,21 +73,36 @@ void DeviceHandler::UnMountAll() {
 }
 
 bool DeviceHandler::MountSD() {
-	if(sdHandle != NULL)
+	printf("Iniciando montagem sd");
+
+	if(sdHandle != NULL){
+		printf("sd já montado");
 		return true;
+	}
+	printf("sd não montado");
 	if(!__io_wiisd.startup())
+	{
+		printf("erro ao iniciar sd");
 		return false;
-	if(!__io_wiisd.isInserted())
+	}
+	printf("Iniciado sd");
+	if(!__io_wiisd.isInserted()){
+		printf("sd não inserido");
 		return false;
+	}
+	printf("sd inserido");
 
 	PartitionHandle* sd = new PartitionHandle(&__io_wiisd);
 	if(sd->GetPartitionCount() < 1)
 	{
+		printf("sd sem partições");
 		delete sd;
 		return false;
 	}
+	printf("sd com %d partiçõe", sd->GetPartitionCount());
 	sdHandle = sd;
 	sdHandle->Mount(0, "sd");
+	printf("sd montado com sucesso");
 	return true;
 }
 

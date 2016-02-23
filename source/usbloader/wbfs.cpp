@@ -86,26 +86,27 @@ s32 WBFS_OpenPart(int part_num)
 	if(part_num >= (int) WbfsList.size())
 		WbfsList.resize(part_num+1);
 
-	int portPart = usbHandle->GetPartitionPos(DeviceHandler::Instance()->GetPartitionPrefix(part_num));
+	int posPart = usbHandle->GetPartitionPos(DeviceHandler::Instance()->GetPartitionPrefix(part_num));
 	int usbPort = DeviceHandler::Instance()->PartitionToPortUSB(part_num);
 
-	debughelper_printf("\tWBFS_OpenPart: filesystem: %s, start sector %u, sector count: %u\n", usbHandle->GetFSName(portPart), usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart));
+	debughelper_printf("\tWBFS_OpenPart: filesystem: %s, start sector %u, sector count: %u\n",
+			usbHandle->GetFSName(posPart), usbHandle->GetLBAStart(posPart), usbHandle->GetSecCount(posPart));
 
-	if (strncmp(usbHandle->GetFSName(portPart), "FAT", 3) == 0)
+	if (strncmp(usbHandle->GetFSName(posPart), "FAT", 3) == 0 || strncmp(usbHandle->GetFSName(posPart), "FAT32", 3) == 0)
 	{
-		WbfsList[part_num] = new Wbfs_Fat(usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart), part_num, usbPort);
+		WbfsList[part_num] = new Wbfs_Fat(usbHandle->GetLBAStart(posPart), usbHandle->GetSecCount(posPart), part_num, usbPort);
 	}
-	else if (strncmp(usbHandle->GetFSName(portPart), "NTFS", 4) == 0)
+	else if (strncmp(usbHandle->GetFSName(posPart), "NTFS", 4) == 0)
 	{
-		WbfsList[part_num] = new Wbfs_Ntfs(usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart), part_num, usbPort);
+		WbfsList[part_num] = new Wbfs_Ntfs(usbHandle->GetLBAStart(posPart), usbHandle->GetSecCount(posPart), part_num, usbPort);
 	}
-	else if (strncmp(usbHandle->GetFSName(portPart), "LINUX", 5) == 0)
+	else if (strncmp(usbHandle->GetFSName(posPart), "LINUX", 5) == 0)
 	{
-		WbfsList[part_num] = new Wbfs_Ext(usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart), part_num, usbPort);
+		WbfsList[part_num] = new Wbfs_Ext(usbHandle->GetLBAStart(posPart), usbHandle->GetSecCount(posPart), part_num, usbPort);
 	}
-	else if (strncmp(usbHandle->GetFSName(portPart), "WBFS", 4) == 0)
+	else if (strncmp(usbHandle->GetFSName(posPart), "WBFS", 4) == 0)
 	{
-		WbfsList[part_num] = new Wbfs_Wbfs(usbHandle->GetLBAStart(portPart), usbHandle->GetSecCount(portPart), part_num, usbPort);
+		WbfsList[part_num] = new Wbfs_Wbfs(usbHandle->GetLBAStart(posPart), usbHandle->GetSecCount(posPart), part_num, usbPort);
 	}
 	else
 	{

@@ -3,6 +3,7 @@
 #include <malloc.h>
 #include <ogcsys.h>
 #include "wbfs.h"
+#include "../debughelper/debughelper.h"
 
 /* Constants */
 #define IOCTL_DI_READID		0x70
@@ -391,9 +392,11 @@ s32 WDVD_Read_Disc_BCA(void *buf)
 
 s32 WDVD_SetFragList(int device, void *fraglist, int size)
 {
+	debughelper_printf("wdvd: %d", __LINE__);
 	if (_di_fd < 0)
 		return _di_fd;
 
+	debughelper_printf("wdvd: %d", __LINE__);
 	s32 ret;
 
 	memset(inbuf, 0, sizeof(inbuf));
@@ -405,12 +408,15 @@ s32 WDVD_SetFragList(int device, void *fraglist, int size)
 	inbuf[2] = (u32)fraglist;
 	inbuf[3] = size;
 
+	debughelper_printf("wdvd: %d", __LINE__);
 	DCFlushRange(fraglist, size);
 	ret = IOS_Ioctl(_di_fd, IOCTL_DI_SETFRAG, inbuf, sizeof(inbuf), outbuf, sizeof(outbuf));
+	debughelper_printf("wdvd: %d, ret: %d", __LINE__, ret);
 
 	if (ret < 0)
 		return ret;
 
+	debughelper_printf("wdvd: %d, ret: %d", __LINE__, ret);
 	return (ret == 1) ? 0 : -ret;
 }
 

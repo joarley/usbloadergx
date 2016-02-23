@@ -3,6 +3,7 @@
 #include "usb_new.h"
 #include <string.h>
 #include "../debughelper/debughelper.h"
+#include <stdio.h>
 
 static bool devices_initialized[MAX_USB_STORAGE_DEVICES];
 static usb_device_entry devices[MAX_USB_STORAGE_DEVICES];
@@ -13,30 +14,45 @@ static bool started = false;
 
 
 bool usbstorage_init() {
+	printf("Iniciando usb storage");
 	int i = 0;
 
-	if(USB_Initialize() != USB_OK)
+	if(USB_Initialize() != USB_OK){
+		printf("Erro ao iniciar usb");
 		return false;
+	}
+	printf("usb iniciado");
 
-	if(USBStorage_Initialize() != USB_OK)
+	if(USBStorage_Initialize() != USB_OK){
+		printf("Erro ao iniciar usb storage");
 		return false;
+	}
+	printf("usb storage iniciado");
 
-	if(USB_GetDeviceList(devices, MAX_USB_STORAGE_DEVICES, 0x08, &num_devices) != USB_OK)
+	if(USB_GetDeviceList(devices, MAX_USB_STORAGE_DEVICES, 0x08, &num_devices) != USB_OK){
+		printf("Erro ao buscar lista de devices, %d devices encontrados", num_devices);
 		return false;
+	}
+	printf("%d devices encontrados", num_devices);
 
-	memset(handles, 0, sizeof(usb_device_entry) * MAX_USB_STORAGE_DEVICES);
+	memset(handles, 0, sizeof(usbstorage_handle) * MAX_USB_STORAGE_DEVICES);
 	memset(devices_initialized, 0, sizeof(bool) * MAX_USB_STORAGE_DEVICES);
 	for(; i < MAX_USB_STORAGE_DEVICES;i++)
 		hdd_sector_size[i] = 0;
 
+	printf("USB storage iniciado");
+	started = true;
 	return true;
 }
 
 void usbstorage_deinit() {
+	printf("Iniciando usb deinit");
 	int i = 0;
 	for(; i < MAX_USB_STORAGE_DEVICES;i++){
-		if(devices_initialized[i])
+		printf("porta %d iniciado = %d", i, devices_initialized[i]);
+		if(devices_initialized[i]){
 			usbstorage_shutdown(i);
+		}
 		hdd_sector_size[i] = 0;
 	}
 
@@ -68,6 +84,9 @@ int usbstorage_startup(int port) {
 			return -2;
 	}
 
+	if(devices_initialized[port])
+		return 1;
+
 	s32 ret = USBStorage_Open(&handles[port], devices[port].device_id, devices[port].vid, devices[port].pid);
 	if(ret != USB_OK)
 	{
@@ -92,7 +111,11 @@ u32 usbstorage_get_capacity(int port) {
 		return 0;
 
 	u32 sector_num = 0;
-	if(USBStorage_ReadCapacity(&handles[port], 0, &hdd_sector_size[port], &sector_num) != USB_OK)
+	s32 ret = USBStorage_ReadCapacity(&handles[port], 0, &hdd_sector_size[port], &sector_num);
+	debughelper_printf(
+			"USBStorage_ReadCapacity retornou %d e sector size é %d, sector num é %d",
+			ret, hdd_sector_size[port], sector_num);
+	if(ret != USB_OK)
 		return 0;
 
 	return hdd_sector_size[port] * sector_num;
@@ -112,8 +135,10 @@ bool usbstorage_read_sectors(int port, u32 sector, u32 numSectors, void *buffer)
 	if(!devices_initialized[port])
 		return false;
 
-	s32 readResult = USBStorage_Read(&handles[port], 0, sector, numSectors, buffer);
-	debughelper_printf("resultado leitura %d", port);
+	s32 readResult = USBStorage_MountLUN(&handles[port], 0);
+	debughelper_printf("resultado mountlun %d", readResult);
+	readResult = USBStorage_Read(&handles[port], 0, sector, numSectors, buffer);
+	debughelper_printf("resultado leitura %d", readResult);
 
 	if(readResult != USB_OK)
 		return false;
